@@ -7,47 +7,10 @@ library(patchwork)
 
 
 
-df1<-read_csv('/Users/user/Downloads/UrbanMalariaHFS_DATA_LABELS_2024-02-18_1651 Latest.csv')
+dflong<-read_csv('/Users/user/Downloads/UrbanMalariaLongitud_DATA_LABELS_2024-02-05_1410_Kano.csv')
 
-df1 <- df1 %>%
+dflong <- dflong %>%
   mutate_if(is.character, as.factor)
-
-
-#Summary by DATE----
-wardds<- c("Zango","Tudun Wazurci","Dorayi", "Fagge D2","Gobirawa")
-summary_Date <-  df1  %>%
-#  filter ( `Complete1` =='Complete' ) %>%
-#summary_Date <-  df1  %>%
-# filter ( `Complete1` =='Complete' , (`LGA of Address`=="Kano Municipal" | `LGA of Address` == "Tarauni" |`LGA of Address`=="Dala" |`LGA of Address`=="Nassarawa"|`LGA of Address`=="Gwale" |`LGA of Address` =="Fagge"), `Number of Pregnancy New`< 5, !(`Ward` %in% wardds) ) %>%
-df_filtered <- summary_Date[!(summary_Date$`Ward` %in% wardds), ] %>%
-  group_by(`Month_of_Completion`) %>%
-  summarise(
-    Total_Completed_by_DATE = n(),
-    myCount = sum(nrow(`Month_of_Completion`))
-  ) |>
-  select(`Month_of_Completion`,  Total_Completed_by_DATE )
-Meettarget=775-df1$Total_Completed_by_DATE
-View(summary_Date,Meettarget)
-
-x <- c(summary_Date$`Month_of_Completion`)
-y <- c(summary_Date$Total_Completed_by_DATE)
-
-
-dateplot<-ggplot(summary_Date,
-                 aes(reorder(Month_of_Completion, -Total_Completed_by_DATE ),Total_Completed_by_DATE), size =4 , ) +
-  geom_bar(stat = "identity", fill="#661133")+
-  geom_text(aes(label = signif(Total_Completed_by_DATE)), nudge_y = 0, vjust = -0.5) +
-  geom_text(aes(label =Month_of_Completion ), nudge_y = 25, vjust = -0.7, ) +
-  labs(#title = "Health Facility Survey",
-    # subtitle = "Plot of Achievement by Month",
-    # caption = "Data source : Health Facility Survey, Kano"
-  )
-dateplot <- dateplot + theme_manuscript() +labs(y= "Total Completed by Month", x = "")
-dateplot
-
-
-
-
 
 #Summary by DATE OF BIRTH----
 
@@ -139,22 +102,6 @@ df1$`INTERVIEWER'S NAME` <- gsub("07064413583", "HAUWAU BARDE ABDULLAHI", df1$`I
 df1$`INTERVIEWER'S NAME` <- gsub("FATIMA YAHYA MUHAMMAD", "FATIMA YAHAYA MUHAMMAD", df1$`INTERVIEWER'S NAME`)
 df1$`INTERVIEWER'S NAME` <- gsub("AMINASARKIABUBAKAR", "AMINA SARKI ABUBAKAR", df1$`INTERVIEWER'S NAME`)
 
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS  MAHMOUD AABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHAMMADU ABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHMOUD AABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHMOUD ABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-
-df1$`INTERVIEWER'S NAME` <- gsub("MAEYAM ADAMU GARBA", "MARYAM ADAMU GARBA", df1$`INTERVIEWER'S NAME`)
-
-
-df1$`INTERVIEWER'S NAME` <- gsub("AISHA BELL0 MUHAMMAD", "AISHA BELLO MUHAMMAD", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("AISHA BELLO.MUHAMMAD", "AISHA BELLO MUHAMMAD", df1$`INTERVIEWER'S NAME`)
-
-df1$`INTERVIEWER'S NAME` <- gsub("DANLAMI ZAHARAU", "ZAHARAU DANLAMI", df1$`INTERVIEWER'S NAME`)
-
-
-
-
 
 summary_int <-  df1  %>%
   #filter ( `Complete_part1` =='Complete'  ) %>%
@@ -207,7 +154,7 @@ summary_lga_sel <-  df1  %>%
     Total_Completed_by_LGA = n(),
     Positive_Count = sum(nrow(`q124b: How many pregnancies have you had`))
   ) |>
-  select(`NAME OF HEALTH FACILITY`,`q124b: How many pregnancies have you had`,  Total_Completed_by_LGA )
+  select(`NAME OF HEALTH FACILITY`,`INTERVIEWER'S NAME`,`q124b: How many pregnancies have you had`,  Total_Completed_by_LGA )
 View(summary_lga_sel)
 print(sum(summary_lga_sel$Total_Completed_by_LGA))
 
@@ -228,10 +175,10 @@ theme_manuscript <- function(){
 }
 
 lgplot1<-ggplot(summary_lga_sel,
-                aes(x=reorder(`q124b: How many pregnancies have you had`,-Total_Completed_by_LGA),Total_Completed_by_LGA, fill = `NAME OF HEALTH FACILITY`)) +
-  geom_bar(stat = "identity")+
+                aes(x=reorder(`q124b: How many pregnancies have you had`,-Total_Completed_by_LGA),Total_Completed_by_LGA), color=`LGA of Address`) +
+  geom_bar(stat = "identity", fill="#334425")+
  # geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies")), nudge_y = 20, vjust = -1.9) +
-  geom_text(aes(label = paste0( `q124b: How many pregnancies have you had` ," Pregnancies :", signif(Total_Completed_by_LGA))), position = position_stack(vjust = 0.5) ) +
+  geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies :", signif(Total_Completed_by_LGA))), nudge_y = 2, vjust = -0.5 ) +
   labs(title = "Health Facility Survey : Number of Previous Pregnancies",
        #subtitle = "From the graph we can see that some respondents visits the health facility from different LGAs even from outside of the selected LGAs, this might be due to  among other \n reasons proximity of the residence to the Health Facilities, We could not classify some other ",
        caption = "Data source : Health Facility Survey, Kano"
@@ -455,13 +402,13 @@ lgplot1ns
     
   )
 summary_lga_sel <-  df1  %>%
-  filter ( (`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') | !(`Ward` %in% Allowedwards) ) %>%
-  group_by(`NAME OF HEALTH FACILITY`, `Ward`) %>%
+  filter ( (`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') | !(`Ward` %in% Allowedwards) ) %>%
+  group_by(`Ward`) %>%
   summarise(
     Total_Completed_by_LGA = n(),
     Positive_Count = sum(nrow(`Ward`))
   ) |>
-  select(`NAME OF HEALTH FACILITY`,`Ward`,  Total_Completed_by_LGA )
+  select(`Ward`,  Total_Completed_by_LGA )
 View(summary_lga_sel)
 print(sum(summary_lga_sel$Total_Completed_by_LGA))
 
@@ -479,10 +426,10 @@ theme_manuscript <- function(){
 }
 
 lgplot1ns<-ggplot(summary_lga_sel,
-                  aes(reorder(`NAME OF HEALTH FACILITY`, -Total_Completed_by_LGA),Total_Completed_by_LGA, fill=`Ward` )) +
-  geom_bar(stat = "identity")+
-  geom_text(aes(label = paste(`Ward`, signif(Total_Completed_by_LGA))), position = position_stack(vjust = 0.5) ) +
- # geom_text(aes(label = `Ward`), nudge_y = 5, vjust = -0.5 ) +
+                  aes(reorder(`Ward`, -Total_Completed_by_LGA),Total_Completed_by_LGA), color=`Ward`) +
+  geom_bar(stat = "identity", fill="#334425")+
+  geom_text(aes(label = signif(Total_Completed_by_LGA)), nudge_y = 2, vjust = -0.5) +
+  geom_text(aes(label = `Ward`), nudge_y = 20, vjust = -0.5 ) +
   labs(#title = "Health Facility Survey : Completed by LGA's (Selected) of Residence",
     #caption = "Data source : Health Facility Survey, Kano"
   )
@@ -585,7 +532,7 @@ plot(tablecompletion) + theme_manuscript()
 ###Summary by PHC----
 
 summary_phc <-  df1  %>%
- # filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
+  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`NAME OF HEALTH FACILITY`) %>%
   summarise(
     Total_Completed_by_PHC = n(),
@@ -608,13 +555,13 @@ phcplot<-ggplot(summary_phc,
        caption = "Data source : Health Facility Survey, Kano"
     )
 
-phcplot<-phcplot + theme_manuscript() +labs(y= "Total Completed in PHC", x = "")
+phcplot<-phcplot + theme_manuscript() +labs(y= "Total Completed in PHC After Removing wrong wards", x = "")
 phcplot
 
 ###Summary by PHC after filter----
 
 summary_phc <-  df1  %>%
-  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
+  #filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`NAME OF HEALTH FACILITY`) %>%
   summarise(
     Total_Completed_by_PHC = n(),
@@ -637,17 +584,17 @@ phcplot1<-ggplot(summary_phc,
     caption = "Data source : Health Facility Survey, Kano"
   )
 
-phcplot1<-phcplot1 + theme_manuscript() +labs(y= "Total Completed in PHC After Removing wrong wards", x = "")
+phcplot1<-phcplot1 + theme_manuscript() +labs(y= "Total Completed in PHC", x = "")
 phcplot1
 
-phcplot/phcplot1
 
 #Summary by Dates All Months----
 
-df1$Datef <- as.Date(df1$`Date`, format = "%m/%d/%Y")
+df1$Datef <- as.Date(dflong$`Date`, format = "%m/%d/%Y")
 View(df1)
+
 summary_Date_ <-  df1  %>%
-  #  filter ((`Settlement Type` =="Formal" |`Settlement Type` =="Informal" | `Settlement Type` =="Slum"   ) ) %>%
+  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`Date`, `INTERVIEWER'S NAME`) %>%
   summarise(
     Total_Completed_by_DATE = n(),
@@ -679,14 +626,72 @@ summary_Month <-  summary_Date_  %>%
 
 View(summary_Month)
 
+# Monthly target value
+monthly_target <- 775
 
+# Create a time series plot
+time_series_plot <- ggplot(summary_Month, aes(x = as.factor(MonthNum), y = Total_Completed_in_Month)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = monthly_target, linetype = "dashed", color = "red") +  # Add target line
+  annotate("text", x = 1, y = monthly_target, label = paste("Target:", monthly_target), hjust = -0.7, vjust = 0.3, color = "red") +  # Annotate target value
+  labs(title = "Health Facility Survey Achievement by Month",
+    subtitle = "Plot of Completed interviews by Month",
+    caption = "Data source : Health Facility Survey, Kano") +
+  scale_x_discrete(labels = month.abb) +  # Set labels for months on x-axis
+  theme_manuscript()
+
+# Print the time series plot
+print(time_series_plot)
+
+
+# Monthly target value
+monthly_target <- 775
+
+# Create a time series plot
+time_series_plot1 <- ggplot(summary_Month, aes(x = MonthNum, y = Total_Completed_in_Month, group = 1)) +
+  geom_line() +
+  geom_point(aes(label = Total_Completed_in_Month), size = 0, color = "green4") +  # Annotate points with Total_Completed_in_Month
+  geom_text(aes(label = Total_Completed_in_Month), size = 4, color = "purple")+
+  geom_hline(yintercept = monthly_target, linetype = "dashed", color = "red") +  # Add target line
+  annotate("text", x = 1, y = monthly_target, label = paste("Target:", monthly_target), hjust = -0.2, vjust = 0.5, color = "red") +  # Annotate target value
+  labs(title = "Health Facility Survey Achievement by Month",
+       subtitle = "Plot of Completed interviews by Month",
+       caption = "Data source : Health Facility Survey, Kano") +
+    theme_manuscript() +
+  scale_x_discrete(labels = month.abb)   # Set labels for months on x-axis
+
+
+# Print the time series plot
+print(time_series_plot1)
+
+
+
+# Create a time series plot with lines, points, and labels-----
+time_series_plotMonth <- ggplot(summary_Month, aes(x = MonthNum, y = Total_Completed_in_Month, color = `MonthNum`, group = `MonthNum`, label = Total_Completed_in_Month)) +
+  geom_line() +
+  geom_point() +
+  geom_text(data = summary_Month , 
+            aes(label = paste(`MonthNum`, ": ", Total_Completed_in_Month)), 
+            size = 3, 
+            hjust = -0.2, 
+            vjust = 1.5) +  # Adjust the vjust parameter to increase spacing between labels
+  labs(title = "Completion Rates Over Time",
+       x = "Date",
+       y = "Total Completed",
+       color = "Interviewer") +
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legends
+
+# Print the time series plot
+print(time_series_plotMonth)
 
 df1$MonthNum <- gsub("/","" ,substr(df1$`Date`, 4, 5))
 
 startd <- df1 %>%
   group_by(`INTERVIEWER'S NAME`) %>%
-  #mutate(Start_Date = min(Date, na.rm = TRUE)) %>%
- # mutate(End_Date = max(Date, na.rm = TRUE)) %>%
+  mutate(Start_Date = min(Date, na.rm = TRUE)) %>%
+  mutate(End_Date = max(Date, na.rm = TRUE)) %>%
  # mutate(Days_worked = End_Date - Start_Date) %>%
   ungroup()
 View(startd)
@@ -716,13 +721,13 @@ View(table_result_day)
 
 
 
-summary_Date_RA$Date1 <- as.Date(summary_Date_RA$Date)
+summary_Date_RA$Date <- as.Date(summary_Date_RA$Date)
 
-# Create a line plot
-line_plot <- ggplot(summary_Date_RA, aes(x = Date1, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`)) +
+# Create a line plot-----
+line_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`)) +
   geom_line() +
   labs(title = "Completion Rates Over Time",
-       x = "Date1",
+       x = "Date",
        y = "Total Completed",
        color = "Date") +
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
@@ -742,18 +747,40 @@ bar_plot <- ggplot(summary_Date_RA, aes(x = `INTERVIEWER'S NAME` , y = Total_Com
 print(bar_plot)
 
 
+# Create a bar plot with labels----
+bar_plot <- ggplot(summary_Date_RA, aes(x = `INTERVIEWER'S NAME` , y = Total_Completed_by_DATE, fill = Date )) +
+  geom_bar(stat = "identity") +
+  labs(title = "Health Facility Survey Achievement by Date",
+    subtitle = "Plot of Completed interviews by day",
+    caption = "Data source : Health Facility Survey, Kano"
+  ) +
+  theme_manuscript() + theme(axis.text.x = element_text(angle = 90)) 
 
-time_series_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`, group = `INTERVIEWER'S NAME`)) +
+# Print the bar plot
+print(bar_plot)
+
+
+
+# Create a time series plot with lines, points, and labels-----
+time_series_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`, group = `INTERVIEWER'S NAME`, label = Total_Completed_by_DATE)) +
   geom_line() +
   geom_point() +
+  geom_text(data = summary_Date_RA %>% group_by(`INTERVIEWER'S NAME`) %>% slice(1), 
+            aes(label = paste(`INTERVIEWER'S NAME`, ": ", Total_Completed_by_DATE)), 
+            size = 3, 
+            hjust = -0.2, 
+            vjust = 1.5) +  # Adjust the vjust parameter to increase spacing between labels
   labs(title = "Completion Rates Over Time",
        x = "Date",
        y = "Total Completed",
        color = "Interviewer") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legends
 
 # Print the time series plot
 print(time_series_plot)
+
+
 
 
 
@@ -783,13 +810,13 @@ phcplot1/phcplot
 
 summary_phc <-  df1  %>%
   mutate(Length_Address = length(`RESPONDENTS ADDRESS`)) %>%
-  filter ( Length_Address <20 ) %>%
+ # filter ( Length_Address <25 ) %>%
   group_by(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`,Length_Address) %>%
   summarise(
     Total_Completed_by_PHC = n(),
-    Add_Count = sum(nrow(`Length_Address` < 20))
+    Positive_Count = sum(nrow(`NAME OF HEALTH FACILITY`))
   ) |>
-select(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`, Total_Completed_by_PHC, Add_Count )
+select(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`, Total_Completed_by_PHC, Length_Address )
 
 View(summary_phc)
 
@@ -2045,7 +2072,8 @@ colors <- c("NEGATIVE" = "green3", "POSITIVE" = "red3")
 plot_wardresult <- ggplot(wardresult, aes(x = `Ward`, y = Proportion, fill = `q503: RESULT`)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = sprintf("%.1f%%", Proportion)),
-            position = position_stack(vjust = 0.5)
+            position = position_stack(vjust = 0.5),
+            vjust = -0.5
   ) +
   #labs(title = "Test Results by  Mosquito net used yesterday", x = " Did you sleep inside a mosquito net last night? ", y = "Proportion of Result") +
   scale_fill_manual(values = colors) + theme_manuscript() + theme(axis.text.x = element_text(angle = 90)) # Apply the color scale
@@ -2348,7 +2376,7 @@ print(plot_wardresult)
   #Positive by Ward Selected KMC----
 
   testedbyWard_sel <- df1 %>%
-   # filter ( (`q503: RESULT` =='POSITIVE' |  `q503: RESULT` =='NEGATIVE'), (`Month_of_Completion` == 'Aug, 2023'|`Month_of_Completion` == 'Sep, 2023'), `LGA of Address`=='KMC' )%>%
+    filter ( (`q503: RESULT` =='POSITIVE' |  `q503: RESULT` =='NEGATIVE'), (`Month_of_Completion` == 'Aug, 2023'|`Month_of_Completion` == 'Sep, 2023'), `LGA of Address`=='KMC' )%>%
     group_by(`Ward`, `q503: RESULT`) %>%
     summarize(Count = n()) %>%
     ungroup() %>%
@@ -2641,7 +2669,7 @@ print(plot_wardresult)
   p_testedbyWard_sel / p_testedbyWard_sel_count
 
 
-    #Loading the map-----
+    #Loading the map
 
   library(sf)
   library(ggplot2)
@@ -2656,7 +2684,7 @@ print(plot_wardresult)
   mymap2=left_join(shape,wardresult1,by=c("WardName"="Ward"))
 View(mymap2)
 
-  breaks <- c(1, 10, 20, 30, 40)
+  breaks <- c(0, 10, 20, 30, 40)
   colors <- c("yellow","orange","red","red3" , "red4")
   #Plotting the map
    mymapplot<- ggplot(mymap2) +

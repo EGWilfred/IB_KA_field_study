@@ -11,7 +11,7 @@ DataDir <- file.path(ProjectDir, 'data', 'DHS', 'Downloads')
 
 ##Household survey analysis
 
-ib_css_hh <- read.csv(file.path(NuDPDir , "hh_data_ib_0811.csv"))
+ib_css_hh <- read.csv(file.path(NuDPDir , "hh_data_ib_1611.csv"))
 
 kn_css_hh <- read.csv(file.path(NuDPDir , "hh_data_kano_0811.csv")) 
 
@@ -68,7 +68,7 @@ ib_css_sum_d <- ib_css_hh %>%
 View(ib_css_sum_d)
 
 # Extract rows for November
-nov_ib_css_hh <- ib_css_sum_d[c(33,36,37,38,39), ]
+nov_ib_css_hh <- ib_css_sum_d[c(33,36,37,38,39,40,41,42,43,44,45), ]
 
 ggplot(data = nov_ib_css_hh , aes(x = Date, y = count)) +
   geom_line()+

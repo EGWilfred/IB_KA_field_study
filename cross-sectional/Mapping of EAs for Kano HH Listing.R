@@ -13,7 +13,7 @@ DataDir <- file.path(ProjectDir, 'data', 'DHS', 'Downloads')
 
 #=======
 user <- Sys.getenv("USER")
-if ("yousouphe" %in% user) {
+if ("ifeomaozodiegwu" %in% user) {
   Drive <- file.path(gsub("[\\]", "/", gsub("Documents", "", Sys.getenv("HOME"))))
   NuDir <- file.path(Drive, "Library", "CloudStorage", "OneDrive-NorthwesternUniversity", "urban_malaria")
   EntoDat <- file.path(NuDir, "data", "nigeria", "kano_ibadan_ento", "Osun-excel")
@@ -24,13 +24,15 @@ if ("yousouphe" %in% user) {
   user <- Sys.getenv("USERNAME")
   Drive <- file.path(gsub("[\\]", "/", gsub("Documents", "", Sys.getenv("HOME"))))
   NuDir <- file.path(Drive, "urban_malaria")
-  shapepath <- file.path(NuDir,"/data/nigeria/kano_ibadan_shape_files")
+  shapepath <- file.path(NuDir,"data", "nigeria", "kano_ibadan", "kano_ibadan_shape_files")
   NuCDir <- file.path(Drive, "my_stuff")
   NuDPDir <- file.path(Drive, "Desktop")
   ProjectDir <- file.path(NuDir, "data", 'nigeria','nigeria_dhs' , 'data_analysis')
-  EADat <- file.path(NuDir, "data", "nigeria", "kano_ibadan_ento", "EA_data")
+  EADat <- file.path(NuDir, "data", "nigeria", "kano_ibadan_epi", "EA_data")
+  EpiDir <- file.path(NuDir, "data", "nigeria", "kano_ibadan_epi", "Shiny data")
+  HFDir <- file.path(EpiDir, "Health_Facility")
+  HHDir <- file.path(EpiDir, "Household")ShnyDatDir <- file.path(NuDir, "data", "nigeria", "kano_ibadan_ento", "Shiny data")
   ResultDir <-file.path(NuDir, "projects/project_implementation/analysis_output/ento_plots")
-  PresDir <- file.path(NuDir,"presentations", "team member archive_Ifeoma", "2023", "230816_Kano_microstratification", "raw_pictures")
   DataDir <- file.path(ProjectDir, 'data', 'DHS', 'Downloads')
 }
 
@@ -141,6 +143,9 @@ df_kn_d <- df_ko %>%
 df_kn_g <- df_ko %>%
   dplyr::filter(WardName == 'Gobirawa')
 
+df_kn_gi <- df_ko %>%
+  dplyr::filter(WardName == 'Giginyu')
+
 ##Kano
 EA_Kano <- dat[[4]]
 
@@ -171,41 +176,40 @@ p <- ggplot(df_kn_z)+
   labs(title= "Zango Ward in Kano showing selected enumeration areas that fall within the ward")+
   coord_sf()
 
-ggsave(paste0(PresDir,"/", Sys.Date(), '_Zango EAs overall.pdf'), p, width = 8, height = 6)
-#ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Zango EAs overall.pdf'), p, width = 8, height = 6)
+ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Zango EAs overall.pdf'), p, width = 8, height = 6)
 
 
 ##Tudun Wazurchi
 
-# td_hh <- EA_Kano %>% dplyr::filter(Ward=="Tudun Wazurchi")
-# 
-# td_hh_df <- sf::st_as_sf(td_hh, coords=c('Longitude', 'Latitude'), crs=4326)
-# 
-# # Perform st transformation
-# st_crs(df_kn_t) <- 4326
-# 
-# st_crs(td_hh_df) <- 4326
-# 
-# #intersects_b <- st_intersection(bas_hh_df, df_ib_b)
-# 
-# #intersect_sel <- st_intersection(agu_sel_df, df_ib_a)
-# 
-# p <- ggplot(df_kn_t) +
-#   geom_sf(fill = NA) +
-#   geom_point(data = td_hh_df,  aes(geometry = geometry, size = 2.0, col = Settlement), stat= "sf_coordinates")+
-#   scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-#   geom_text_repel(
-#     data = td_hh_df,
-#     aes(label =  `EA Code`, geometry = geometry),color ='black',
-#     stat = "sf_coordinates", min.segment.length = 0, size = 3.5, force = 1, max.overlaps = Inf)+
-#   guides(size = FALSE)+
-#   map_theme()+ 
-#   ylab("")+
-#   xlab("")+
-#   labs(title= "Tudun Wazurchi Ward in Kano showing EAs for listing")+
-#   coord_sf()
+#td_hh <- EA_Kano %>% dplyr::filter(Ward=="Tudun Wazurchi")
 
-#ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Tudun Wazurchi EAs overall.pdf'), p, width = 8, height = 6)
+#td_hh_df <- sf::st_as_sf(td_hh, coords=c('Longitude', 'Latitude'), crs=4326)
+
+# Perform st transformation
+#st_crs(df_kn_t) <- 4326
+
+st_crs(td_hh_df) <- 4326
+
+#intersects_b <- st_intersection(bas_hh_df, df_ib_b)
+
+#intersect_sel <- st_intersection(agu_sel_df, df_ib_a)
+
+p <- ggplot(df_kn_t) +
+  geom_sf(fill = NA) +
+  geom_point(data = td_hh_df,  aes(geometry = geometry, size = 2.0, col = Settlement), stat= "sf_coordinates")+
+  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
+  geom_text_repel(
+    data = td_hh_df,
+    aes(label =  `EA Code`, geometry = geometry),color ='black',
+    stat = "sf_coordinates", min.segment.length = 0, size = 3.5, force = 1, max.overlaps = Inf)+
+  guides(size = FALSE)+
+  map_theme()+ 
+  ylab("")+
+  xlab("")+
+  labs(title= "Tudun Wazurchi Ward in Kano showing EAs for listing")+
+  coord_sf()
+
+ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Tudun Wazurchi EAs overall.pdf'), p, width = 8, height = 6)
 
 
 
@@ -239,8 +243,7 @@ p <- ggplot(df_kn_f) +
   labs(title= "Fagge Ward in Kano showing EAs for listing")+
   coord_sf()
 
-ggsave(paste0(PresDir,"/", Sys.Date(), '_Faggae EAs overall.pdf'), p, width = 8, height = 6)
-#ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Faggae EAs overal.pdf'), p, width = 8, height = 6)
+ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Faggae EAs overal.pdf'), p, width = 8, height = 6)
 
 
 ##Dorayi
@@ -273,7 +276,6 @@ p <- ggplot(df_kn_d) +
   labs(title= "Dorayi Ward in Kano showing EAs for listing")+
   coord_sf()
 
-ggsave(paste0(PresDir,"/", Sys.Date(), '_Dorayi EAs overall.pdf'), p, width = 8, height = 6)
 ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Dorayi EAs overal.pdf'), p, width = 8, height = 6)
 
 
@@ -307,6 +309,51 @@ p <- ggplot(df_kn_g) +
   labs(title= "Gobirawa Ward in Kano showing EAs for listing")+
   coord_sf()
 
-ggsave(paste0(PresDir,"/", Sys.Date(), '_Gobirawa EAs overall.pdf'), p, width = 8, height = 6)
 ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Gobirawa EAs overal.pdf'), p, width = 8, height = 6)
+
+
+##Ginginju
+
+gi_hh <- EA_Kano %>% dplyr::filter(Ward=="Ginginju")
+
+gi_hh <- read.csv(file.path(NuDPDir , "ging_coord.csv"))
+row_to_delete <- 32:91
+gi_hh <- gi_hh [-row_to_delete, ]
+
+gi_hh_df <- sf::st_as_sf(gi_hh, coords=c('Longitude', 'Latitude'), crs=4326)
+
+# Perform st transformation
+
+st_crs(df_kn_gin) <- 4326
+
+st_crs(df_kn_gi) <- 4326
+
+st_crs(gi_hh_df) <- 4326
+
+st_crs(df_ko) <- 4326
+
+g_inter <- st_intersection(df_kn_gin, gi_hh_df)
+
+p <- ggplot(df_kn_gin) +
+  geom_sf(fill = NA) +
+  geom_point(data = g_inter,  aes(geometry = geometry, size = 3.0, col = Settlement), stat= "sf_coordinates")+
+
+g_inter <- st_intersection(df_kn_gi, gi_hh_df)
+
+p <- ggplot(df_kn_gi) +
+  geom_sf(fill = NA) +
+  geom_point(data = g_inter,  aes(geometry = geometry, size = 2.0, col = Settlement), stat= "sf_coordinates")+
+  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2"))+
+  geom_text_repel(
+    data = g_inter,
+    aes(label =  `EA_code`, geometry = geometry),color ='black',
+    stat = "sf_coordinates", min.segment.length = 0, size = 3.5, force = 1, max.overlaps = Inf)+
+  guides(size = FALSE)+
+  map_theme()+ 
+  ylab("")+
+  xlab("")+
+  labs(title= "Ginginju Ward in Kano showing EAs for listing")+
+  coord_sf()
+
+ggsave(paste0(ResultDir,"/", Sys.Date(), "/", 'Ginjiju EAs overal.pdf'), p, width = 8, height = 6)
 
