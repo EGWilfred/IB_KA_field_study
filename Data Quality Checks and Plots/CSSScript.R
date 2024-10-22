@@ -5,112 +5,133 @@ library(dplyr)
 library(ggplot2)
 library(patchwork)
 
-
-
-df1<-read_csv('/Users/user/Downloads/UrbanMalariaHFS_DATA_KN_IB_Merged.csv')
+df1 <- read_csv('Downloads/all_malaria_data (1).csv')
 
 df1 <- df1 %>%
   mutate_if(is.character, as.factor)
 
-View(df1)
-#Summary by DATE----
-wardds<- c("Zango","Giginyu","Dorayi", "Fagge D2","Gobirawa","Olopomewa","Basorun", "Agugu", "Challenge")
-#summary_Date <-  df1  %>%
-#  filter ( `Complete1` =='Complete' ) %>%
-#summary_Date <-  df1  %>%
-# filter ( `Complete1` =='Complete' , (`LGA of Address`=="Kano Municipal" | `LGA of Address` == "Tarauni" |`LGA of Address`=="Dala" |`LGA of Address`=="Nassarawa"|`LGA of Address`=="Gwale" |`LGA of Address` =="Fagge"), `Number of Pregnancy New`< 5, !(`Ward` %in% wardds) ) %>%
-df_filtered <- df1[!(df1$`Ward` %in% wardds), ] 
-
-df_filtered_summary <- df_filtered %>%
-  group_by(`State`) %>%
+dfcss_ <- df1 %>%
+  group_by(`settlement_type`, ) %>%
   summarise(
-    Total = n(),
-    #myCount = sum(nrow(`Month_of_Completion`))
+    Count = n()
+    
+  )
+
+View(dfcss_)
+dflong<-read_csv('/Users/user/Downloads/UrbanMalariaLongitud_DATA_LABELS_2024-02-05_1410_Kano.csv')
+
+dflong <- dflong %>%
+  mutate_if(is.character, as.factor)
+
+
+dfcss<-read_csv('/Users/user/Downloads/UrbanMalariaHousehol-DataUpdate2_DATA_LABELS_2024-05-14_1654.csv')
+
+dfcss <- dfcss %>%
+  mutate_if(is.character, as.factor)
+
+
+dfcss_ <- dfcss %>%
+  group_by(`Serial Number`) %>%
+  fill(2:7, 21:26)
+
+View(dfcss_)
+#dfcss_$`Ward` <- gsub("Others", "Giginyu", dfcss_$`Ward`)
+
+
+
+library(openxlsx)
+
+
+write.xlsx(dfcss_, "Cross_sectional.xlsx", rowNames = FALSE) 
+dfcss_$`Line Number...26` <- gsub("0", "", dfcss_$`Line Number...26`)
+
+dfcss_$`Line Number...8` <- as.numeric(dfcss_$`Line Number...8`)
+dfcsss_   <-  dfcss_   %>%
+  filter(`Line Number...8` >=3)
+
+
+#select( Ward,`Serial Number`, `INTERVIEWER'S NAME...15`,`q302: RESULT` )
+
+View(summary_Children_line)
+
+
+table(dfcss_$`Line Number...8`)
+
+
+table(dfcss_$`q302: RESULT`) 
+
+table(summary_Children_line$`q302: RESULT`) 
+
+#Positive children-----
+summary_Children_line_p <-  dfcsss_   %>%
+  filter(`q302: RESULT` == "POSITIVE")%>%
+group_by(`Ward`,`Serial Number`, `Settlement Type` ,`INTERVIEWER'S NAME`) %>%
+summarise(
+  Total_Positives = n()
+) 
+
+
+
+View(summary_Children_line_p)
+
+summary_Children_line_3 <-  summary_Children_line_p   %>%
+  filter(Total_Positives > 1)
+
+View(summary_Children_line_3)
+
+write.xlsx(summary_Children_line_3, "Cross_sectional_Line_number_issues wet season v1.xlsx", rowNames = FALSE) 
+
+summary_Children_line_Int <-  summary_Children_line_3   %>%
+group_by(`INTERVIEWER'S NAME`) %>%
+  summarise(
+    Total_Count_RAs = n(),
   ) |>
-  select(`State`,  Total)
-#Meettarget=775-df1$Total_Completed_by_DATE
-View(df_filtered)
+  select(`INTERVIEWER'S NAME`, Total_Count_RAs )
 
+View(summary_Children_line_Int)
 
-#df_filtered <- df_filtered %>%
-#  mutate(`q124b: How many pregnancies have you had` = recode(`q124b: How many pregnancies have you had`, 
- #                                           "01" = '1', 
-  #                                          "02" = '2', 
-   #                                         "04" = '4' 
-    #                                      ))
+#POSITIVE HHS----
 
-#df_filtered <- df_filtered %>%
- # mutate(`q124c: How many pregnancies were carried to term?` = recode(`q124c: How many pregnancies were carried to term?`, 
-  #                                                           "01" = '1', 
-   #                                                          "02" = '2', 
-    #                                                         "03" = '3' 
-  #))
-
-df_filtered_n <- df_filtered %>%
-  mutate(
-    `q124b: How many pregnancies have you had` = as.numeric(as.character(`q124b: How many pregnancies have you had`)),
-    `q124c: How many pregnancies were carried to term?` = as.numeric(as.character(`q124c: How many pregnancies were carried to term?`))
+dfcss_$`q300i_new: Line Number` <- as.numeric(dfcss_$`q300i: Line Number`)
+summary_Children_line <-  dfcss_   %>%
+  filter(`q300i: Line Number` == 3 ) %>%
+  group_by(`Ward`,`Settlement Type`,`Serial Number`, `INTERVIEWER'S NAME`,`q300i_new: Line Number`,`q302: RESULT`) %>%
+  summarise(
+    Total_Count = n(),
   ) 
 
 
-df_filtered_n$`q124b: How many pregnancies have you had`[df_filtered_n$State == 'Kano' & df_filtered_n$`q124b: How many pregnancies have you had` == 1] <- 0
-df_filtered_n$`q124b: How many pregnancies have you had`[df_filtered_n$State == 'Kano' & df_filtered_n$`q124b: How many pregnancies have you had` == 2] <- 1
-df_filtered_n$`q124b: How many pregnancies have you had`[df_filtered_n$State == 'Kano' & df_filtered_n$`q124b: How many pregnancies have you had` == 3] <- 2
-df_filtered_n$`q124b: How many pregnancies have you had`[df_filtered_n$State == 'Kano' & df_filtered_n$`q124b: How many pregnancies have you had` == 4] <- 3
-df_filtered_n$`q124b: How many pregnancies have you had`[df_filtered_n$State == 'Kano' & df_filtered_n$`q124b: How many pregnancies have you had` == 5] <- 4
+
+summary_Children_line_3 <-  summary_Children_line   %>%
+  filter(Total_Count > 1, `q302: RESULT` == 'POSITIVE')
+
+View(summary_Children_line_3)
+
+write.xlsx(summary_Children_line_3, "Cross_sectional_Line_number_issues.xlsx", rowNames = FALSE) 
+
+summary_Children_line_Int <-  summary_Children_line_3   %>%
+  group_by(`INTERVIEWER'S NAME...15`) %>%
+  summarise(
+    Total_Count_RAs = n(),
+  ) |>
+  select(`INTERVIEWER'S NAME...15`, Total_Count_RAs )
+
+View(summary_Children_line_Int)
 
 
 
 
-df_filtered_inv <- df_filtered_n %>%
-  filter(`q124b: How many pregnancies have you had` < `q124c: How many pregnancies were carried to term?`)
-
-
-df_filtered_inv <- df_filtered_n %>%
-  filter(`q124b: How many pregnancies have you had` < `q124c: How many pregnancies were carried to term?` )
-
-
-
-write.csv(df1,"HF_data_merged_kn_ib.csv")
-
-write.csv(df_filtered,"HFS_data_with_wrong_wards_removed.csv")
-
-write.csv(df_filtered_n,"HFS_data_recoded_for_no_of_pregnancies_kn_and_pregnancies_to_term.csv")
-
-write.csv(df_filtered_inv,"HFS_data_with_preg_carried_to_term_greater_than_total_pregnancies.csv")
-
-
-
-# Recode number of pregnancies based on conditions
-df_filtered_n$`q124b: How many pregnancies have you had` <- ifelse(df_filtered_n$State == 'Kano' & df_filtered_n$`q124c: How many pregnancies were carried to term?` =="1" & df_filtered_n$`q124b: How many pregnancies have you had` == 0,1, df_filtered_n$`q124b: How many pregnancies have you had`) 
-df_filtered_n$`q124b: How many pregnancies have you had` <- ifelse(df_filtered_n$State == 'Kano' & df_filtered_n$`q124c: How many pregnancies were carried to term?` =="2" & df_filtered_n$`q124b: How many pregnancies have you had` == 1,2, df_filtered_n$`q124b: How many pregnancies have you had`) 
-df_filtered_n$`q124b: How many pregnancies have you had` <- ifelse(df_filtered_n$State == 'Kano' & df_filtered_n$`q124c: How many pregnancies were carried to term?` =="3" & df_filtered_n$`q124b: How many pregnancies have you had` == 2,3, df_filtered_n$`q124b: How many pregnancies have you had`) 
-df_filtered_n$`q124b: How many pregnancies have you had` <- ifelse(df_filtered_n$State == 'Kano' & df_filtered_n$`q124c: How many pregnancies were carried to term?` =="4" & df_filtered_n$`q124b: How many pregnancies have you had` == 3,4, df_filtered_n$`q124b: How many pregnancies have you had`) 
-
-write.csv(df_filtered_n,"HFS_data_corrected_no_of_pregnancies_to_match_pregnancies_carried_to_term.csv")
-
-
-
-
-
-
-
-x <- c(summary_Date$`Month_of_Completion`)
-y <- c(summary_Date$Total_Completed_by_DATE)
-
-
-dateplot<-ggplot(summary_Date,
-                 aes(reorder(Month_of_Completion, -Total_Completed_by_DATE ),Total_Completed_by_DATE), size =4 , ) +
+lnplot<-ggplot(summary_Children_line_Int,
+                 aes(reorder(`INTERVIEWER'S NAME...15`, -Total_Count_RAs ),Total_Count_RAs), size =4 , ) +
   geom_bar(stat = "identity", fill="#661133")+
-  geom_text(aes(label = signif(Total_Completed_by_DATE)), nudge_y = 0, vjust = -0.5) +
-  geom_text(aes(label =Month_of_Completion ), nudge_y = 25, vjust = -0.7, ) +
+  geom_text(aes(label = signif(Total_Count_RAs)), nudge_y = 0, vjust = -0.5) +
+  #geom_text(aes(label =`INTERVIEWER'S NAME...15` ), nudge_y = 25, vjust = -0.7, ) +
   labs(#title = "Health Facility Survey",
     # subtitle = "Plot of Achievement by Month",
     # caption = "Data source : Health Facility Survey, Kano"
   )
-dateplot <- dateplot + theme_manuscript() +labs(y= "Total Completed by Month", x = "")
-dateplot
-
+lnplot <- lnplot + theme_manuscript() +labs(y= "Total Completed by Month", x = "")  + theme(axis.text.x = element_text(angle = 90))
+lnplot
 
 
 
@@ -197,6 +218,78 @@ lgplot
 ###Interviewer Name ----
 
 
+#css
+
+summary_int <-  dfcss_  %>%
+  mutate(`INTERVIEWER'S NAME` = recode(`INTERVIEWER'S NAME`,
+    "ABBA MAHMUD ABBAS" = "ABBAS MAHMUD ABBAS",
+    "ABBAAS MAHMUD ABBAS" = "ABBAS MAHMUD ABBAS",
+    "ABBAS MAHMOUD ABBAS" = "ABBAS MAHMUD ABBAS",
+    "ABBAS MAHMUD" = "ABBAS MAHMUD ABBAS",
+    "AMIR RAYYAN" = "AMEER RAYYAN MUHAMMAD",
+    "ABDUL HAMID INUWA KILISHI" = "ABDULHAMID INUWA KILISHI",
+    "ABDULLAH ALI" = "ABDULLAHI ALI",
+    "ABDULLAHI  ALI" = "ABDULLAHI ALI",
+    "AHMAD MUHAMMAD BELLO" = "AHMAD MUHMMAD BELLO",
+    "AISHA MUHAMMAD TELE" = "AISHA MUHAMMAD TELA",
+    "AUWAL Kabir ado" = "AUWAL KABIR ADO",
+    "AUWALKABIRADO" = "AUWAL KABIR ADO",
+    "AUWAL" = "AUWAL KABIR ADO",
+    "BINTA DANASABE MUHAMMAD" = "BINTA DANASABE",
+    "BINTA" = "BINTA DANASABE",
+    "KHADIJA MUSA MUHAMMAD'S" = "KHADIJA MUSA MUHAMMAD",
+    "KHADIJAH ISAH  BASHIR" = "KHADIJAH ISAH BASHIR",
+    "MARYAM  L  SANI" = "MARYAM LAWAN SANI",
+    "Maryam Salis Adam" = "MARYAM SALISU ADAM",
+    "MARYAM SALISU ADAM" = "MARYAM SALISU ADAM",
+    "MUHAMMAD AHAMAD BELLO" = "MUHAMMAD AHMAD BELLO",
+    "SANI IBRAHM" = "SANI IBRAHIM SALISU",
+    "SANI IBRAHIM SALISU IBRAHIM" = "SANI IBRAHIM SALISU",
+    "MAHMUDA SUNUSI 3" = "MAHMUDA SUNUSI ABDULLAHI",
+    "MARAYAM L SANI" = "MARYAM LAWAN SANI",
+    "Dr MUKHTAR" = "DR MUKHTAR",
+    "HAUWA"="HAUWA MUHAMMAD",
+    "JAMILU" = "JAMILU UMAR",
+    "JUWAIRIYYA"="JUWAIRIYYA LAWAL YAKUB",
+    "JUWAIRIYYA LAWAL"="JUWAIRIYYA LAWAL YAKUB",
+    "KHADIJA ISAH"="KHADIJAH ISAH BASHIR",
+    "MARYAM L SANI" = "MARYAM LAWAN SANI",
+    "MARYAM" = "MARYAM LAWAN SANI",
+    "MARYAM SALIS ADAM" = "MARYAM SALISU ADAM",
+    
+    "MURJANATU RABIU"="MURJANATU RABIU BATURE",
+    "NAFIU SANI" = "NAFIU SANI WALI",
+    "RABIA" = "RABIA DANJUMA",
+  "SAKINA  AHMAD GAFAI"="SAKINA AHMAD GAFAI",
+  "SAKINA AHMAD"="SAKINA AHMAD GAFAI",
+  "SANI IBRAHIM"="SANI IBRAHIM SALISU"
+    
+  ))%>%
+  
+  filter ( `Complete?...35` =='Complete', `Complete?...71` =='Complete',`Complete?...74` =='Complete',`Complete?...94` =='Complete',`Complete?...106` =='Complete', `Complete?...118` =='Complete' ) %>%
+  group_by(Ward, `INTERVIEWER'S NAME`) %>%
+  summarise(
+    Total_Completed = n()
+  ) |>
+  select(Ward, `INTERVIEWER'S NAME`,Total_Completed )
+View(summary_int)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#HFS
 
 
 df1$`INTERVIEWER'S NAME` <- gsub("A'ISHA MUKHTAR", "AISHA MUKHTAR", df1$`INTERVIEWER'S NAME`)
@@ -204,22 +297,6 @@ df1$`INTERVIEWER'S NAME` <- gsub("HAFSAT RABI'U YARIMA", "HAFSA RABI'U YARIMA", 
 df1$`INTERVIEWER'S NAME` <- gsub("07064413583", "HAUWAU BARDE ABDULLAHI", df1$`INTERVIEWER'S NAME`)
 df1$`INTERVIEWER'S NAME` <- gsub("FATIMA YAHYA MUHAMMAD", "FATIMA YAHAYA MUHAMMAD", df1$`INTERVIEWER'S NAME`)
 df1$`INTERVIEWER'S NAME` <- gsub("AMINASARKIABUBAKAR", "AMINA SARKI ABUBAKAR", df1$`INTERVIEWER'S NAME`)
-
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS  MAHMOUD AABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHAMMADU ABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHMOUD AABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("ABBAS MAHMOUD ABBAS", "ABBAS MAHMUD ABBAS", df1$`INTERVIEWER'S NAME`)
-
-df1$`INTERVIEWER'S NAME` <- gsub("MAEYAM ADAMU GARBA", "MARYAM ADAMU GARBA", df1$`INTERVIEWER'S NAME`)
-
-
-df1$`INTERVIEWER'S NAME` <- gsub("AISHA BELL0 MUHAMMAD", "AISHA BELLO MUHAMMAD", df1$`INTERVIEWER'S NAME`)
-df1$`INTERVIEWER'S NAME` <- gsub("AISHA BELLO.MUHAMMAD", "AISHA BELLO MUHAMMAD", df1$`INTERVIEWER'S NAME`)
-
-df1$`INTERVIEWER'S NAME` <- gsub("DANLAMI ZAHARAU", "ZAHARAU DANLAMI", df1$`INTERVIEWER'S NAME`)
-
-
-
 
 
 summary_int <-  df1  %>%
@@ -245,17 +322,40 @@ theme_manuscript <- function(){
           legend.key.height = unit(1, "cm"))
 }
 
-lgplot1<-ggplot(summary_int, aes(x=reorder(`INTERVIEWER'S NAME`,-Total_Completed),Total_Completed, fill=`NAME OF HEALTH FACILITY`) )+
-  geom_bar(stat = "identity")+
+lgplot1<-ggplot(summary_int, aes(x=reorder(`INTERVIEWER'S NAME`,-Total_Completed),Total_Completed, fill=`Ward`) )+
+  geom_bar(stat = "identity", colour="brown", fill="khaki") +
+  geom_point(aes(size=Total_Completed, color=Ward))+
+  scale_size_continuous(range = c(3, 8), guide = FALSE)  +
   # geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies")), nudge_y = 20, vjust = -1.9) +
-  geom_text(aes(label = paste0(signif(Total_Completed))), nudge_y = 2, vjust = -0.5 ) +
-  labs(title = "Health Facility Survey : Number of Completed",
+  geom_text(size=3,colour="white",aes(label = paste0(Total_Completed)))+
+  labs(title = "Cross Sectional Survey : Number of Completed",
        #subtitle = "From the graph we can see that some respondents visits the health facility from different LGAs even from outside of the selected LGAs, this might be due to  among other \n reasons proximity of the residence to the Health Facilities, We could not classify some other ",
-       caption = "Data source : Health Facility Survey, Kano"
+       caption = "Data source : Cross Sectional Survey, Kano"
   )
 
 lgplot1<-lgplot1 + theme_manuscript() +labs(y= "Total Completed by Interviewer", x = " ")+ theme(axis.text.x = element_text(angle = 90)) 
 lgplot1
+
+#Ward counts CSS
+summary_ward <-  dfcss_  %>%
+  filter ( `Complete?...35` =='Complete', `Complete?...71` =='Complete',`Complete?...74` =='Complete',`Complete?...94` =='Complete',`Complete?...106` =='Complete', `Complete?...118` =='Complete' ) %>%
+  group_by(`Ward`) %>%
+  summarise(
+    Total_Completed = n()
+  ) 
+wardplot<-ggplot(summary_ward, aes(x=reorder(`Ward`,-Total_Completed),Total_Completed) )+
+  geom_bar(stat = "identity", colour="brown", fill="khaki") +
+  geom_point(aes(size=Total_Completed, color=Ward))+
+  scale_size_continuous(range = c(9, 13), guide = FALSE)  +
+  # geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies")), nudge_y = 20, vjust = -1.9) +
+  geom_text(size=4,colour="white",aes(label = paste0(Total_Completed)))+
+  labs(title = "Cross Sectional Survey : Number of Completed",
+       #subtitle = "From the graph we can see that some respondents visits the health facility from different LGAs even from outside of the selected LGAs, this might be due to  among other \n reasons proximity of the residence to the Health Facilities, We could not classify some other ",
+       caption = "Data source : Cross Sectional Survey, Kano"
+  )
+
+wardplot1<-wardplot + theme_manuscript() +labs(y= "Total Completed by Ward", x = " ")+ theme(axis.text.x = element_text(angle = 90)) 
+wardplot1
 
 
 
@@ -273,7 +373,7 @@ summary_lga_sel <-  df1  %>%
     Total_Completed_by_LGA = n(),
     Positive_Count = sum(nrow(`q124b: How many pregnancies have you had`))
   ) |>
-  select(`NAME OF HEALTH FACILITY`,`q124b: How many pregnancies have you had`,  Total_Completed_by_LGA )
+  select(`NAME OF HEALTH FACILITY`,`INTERVIEWER'S NAME`,`q124b: How many pregnancies have you had`,  Total_Completed_by_LGA )
 View(summary_lga_sel)
 print(sum(summary_lga_sel$Total_Completed_by_LGA))
 
@@ -294,10 +394,10 @@ theme_manuscript <- function(){
 }
 
 lgplot1<-ggplot(summary_lga_sel,
-                aes(x=reorder(`q124b: How many pregnancies have you had`,-Total_Completed_by_LGA),Total_Completed_by_LGA, fill = `NAME OF HEALTH FACILITY`)) +
-  geom_bar(stat = "identity")+
+                aes(x=reorder(`q124b: How many pregnancies have you had`,-Total_Completed_by_LGA),Total_Completed_by_LGA), color=`LGA of Address`) +
+  geom_bar(stat = "identity", fill="#334425")+
  # geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies")), nudge_y = 20, vjust = -1.9) +
-  geom_text(aes(label = paste0( `q124b: How many pregnancies have you had` ," Pregnancies :", signif(Total_Completed_by_LGA))), position = position_stack(vjust = 0.5) ) +
+  geom_text(aes(label = paste0(`q124b: How many pregnancies have you had`," Pregnancies :", signif(Total_Completed_by_LGA))), nudge_y = 2, vjust = -0.5 ) +
   labs(title = "Health Facility Survey : Number of Previous Pregnancies",
        #subtitle = "From the graph we can see that some respondents visits the health facility from different LGAs even from outside of the selected LGAs, this might be due to  among other \n reasons proximity of the residence to the Health Facilities, We could not classify some other ",
        caption = "Data source : Health Facility Survey, Kano"
@@ -521,30 +621,15 @@ lgplot1ns
     
   )
 summary_lga_sel <-  df1  %>%
-  filter ( (`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') | !(`Ward` %in% Allowedwards) ) %>%
-  group_by(`NAME OF HEALTH FACILITY`, `Ward`, `Serial Number`) %>%
+  filter ( (`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') | !(`Ward` %in% Allowedwards) ) %>%
+  group_by(`Ward`) %>%
   summarise(
     Total_Completed_by_LGA = n(),
     Positive_Count = sum(nrow(`Ward`))
   ) |>
-  select(`NAME OF HEALTH FACILITY`,`Ward`,  Total_Completed_by_LGA )
+  select(`Ward`,  Total_Completed_by_LGA )
 View(summary_lga_sel)
 print(sum(summary_lga_sel$Total_Completed_by_LGA))
-
-#Out of Scope Addresses ----
-summary_lga_sel <-  df1  %>%
-  filter ( (`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') | !(`Ward` %in% Allowedwards) ) %>%
-  group_by(`NAME OF HEALTH FACILITY`, `Ward`, `Serial Number`, `RESPONDENTS ADDRESS`) %>%
-  summarise(
-    Total_Completed_by_LGA = n(),
-    Positive_Count = sum(nrow(`Ward`))
-  ) |>
-  select(`NAME OF HEALTH FACILITY`,`Ward`,  `Serial Number`, `RESPONDENTS ADDRESS` )
-View(summary_lga_sel)
-
-
-print(sum(summary_lga_sel$Total_Completed_by_LGA))
-
 
 theme_manuscript <- function(){
   theme_bw() +
@@ -560,10 +645,10 @@ theme_manuscript <- function(){
 }
 
 lgplot1ns<-ggplot(summary_lga_sel,
-                  aes(reorder(`NAME OF HEALTH FACILITY`, -Total_Completed_by_LGA),Total_Completed_by_LGA, fill=`Ward` )) +
-  geom_bar(stat = "identity")+
-  geom_text(aes(label = paste(`Ward`, signif(Total_Completed_by_LGA))), position = position_stack(vjust = 0.5) ) +
- # geom_text(aes(label = `Ward`), nudge_y = 5, vjust = -0.5 ) +
+                  aes(reorder(`Ward`, -Total_Completed_by_LGA),Total_Completed_by_LGA), color=`Ward`) +
+  geom_bar(stat = "identity", fill="#334425")+
+  geom_text(aes(label = signif(Total_Completed_by_LGA)), nudge_y = 2, vjust = -0.5) +
+  geom_text(aes(label = `Ward`), nudge_y = 20, vjust = -0.5 ) +
   labs(#title = "Health Facility Survey : Completed by LGA's (Selected) of Residence",
     #caption = "Data source : Health Facility Survey, Kano"
   )
@@ -666,7 +751,7 @@ plot(tablecompletion) + theme_manuscript()
 ###Summary by PHC----
 
 summary_phc <-  df1  %>%
- # filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
+  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`NAME OF HEALTH FACILITY`) %>%
   summarise(
     Total_Completed_by_PHC = n(),
@@ -676,6 +761,9 @@ summary_phc <-  df1  %>%
 
 View(summary_phc)
 
+x <- c(summary_phc$`NAME OF HEALTH FACILITY`)
+y <- c(summary_phc$Total_Completed_by_PHC)
+
 phcplot<-ggplot(summary_phc,
                 aes(x=reorder(`NAME OF HEALTH FACILITY`,-Total_Completed_by_PHC),y=Total_Completed_by_PHC), ) +
   geom_bar(stat = "identity" , fill="#991199")+
@@ -684,14 +772,15 @@ phcplot<-ggplot(summary_phc,
   labs(#title = "Health Facility Survey",
        #subtitle = "Plot of Completed interviews by PHC",
        caption = "Data source : Health Facility Survey, Kano"
-    ) +
-  theme_manuscript() +labs(y= "Total Completed in PHC", x = "")
+    )
+
+phcplot<-phcplot + theme_manuscript() +labs(y= "Total Completed in PHC After Removing wrong wards", x = "")
 phcplot
 
 ###Summary by PHC after filter----
 
 summary_phc <-  df1  %>%
-  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
+  #filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`NAME OF HEALTH FACILITY`) %>%
   summarise(
     Total_Completed_by_PHC = n(),
@@ -714,17 +803,17 @@ phcplot1<-ggplot(summary_phc,
     caption = "Data source : Health Facility Survey, Kano"
   )
 
-phcplot1<-phcplot1 + theme_manuscript() +labs(y= "Total Completed in PHC After Removing wrong wards", x = "")
+phcplot1<-phcplot1 + theme_manuscript() +labs(y= "Total Completed in PHC", x = "")
 phcplot1
 
-phcplot/phcplot1
 
-#Summary by Dates All Months----
+#Summary by Dates All Months with target----
 
-df1$Datef <- as.Date(df1$`Date`, format = "%m/%d/%Y")
+df1$Datef <- as.Date(dflong$`Date`, format = "%m/%d/%Y")
 View(df1)
+
 summary_Date_ <-  df1  %>%
-  #  filter ((`Settlement Type` =="Formal" |`Settlement Type` =="Informal" | `Settlement Type` =="Slum"   ) ) %>%
+ # filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Giginyu'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   group_by(`Date`, `INTERVIEWER'S NAME`) %>%
   summarise(
     Total_Completed_by_DATE = n(),
@@ -756,14 +845,72 @@ summary_Month <-  summary_Date_  %>%
 
 View(summary_Month)
 
+# Monthly target value
+monthly_target <- 775
 
+# Create a time series plot
+time_series_plot <- ggplot(summary_Month, aes(x = as.factor(MonthNum), y = Total_Completed_in_Month)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = monthly_target, linetype = "dashed", color = "red") +  # Add target line
+  annotate("text", x = 1, y = monthly_target, label = paste("Target:", monthly_target), hjust = -0.7, vjust = 0.3, color = "red") +  # Annotate target value
+  labs(title = "Health Facility Survey Achievement by Month",
+    subtitle = "Plot of Completed interviews by Month",
+    caption = "Data source : Health Facility Survey, Kano") +
+  scale_x_discrete(labels = month.abb) +  # Set labels for months on x-axis
+  theme_manuscript()
+
+# Print the time series plot
+print(time_series_plot)
+
+
+#Monthly target value------
+monthly_target <- 775
+
+# Create a time series plot for target ----
+time_series_plot1 <- ggplot(summary_Month, aes(x = MonthNum, y = Total_Completed_in_Month, group = 1)) +
+  geom_line() +
+  geom_point(aes(label = Total_Completed_in_Month), size = 0, color = "green4") +  # Annotate points with Total_Completed_in_Month
+  geom_text(aes(label = Total_Completed_in_Month), hjust = 0.5, vjust = 0.1, size = 4, color = "purple")+
+  geom_hline(yintercept = monthly_target, linetype = "dashed", color = "orange") +  # Add target line
+  annotate("text", x = 1, y = monthly_target, label = paste("Target:", monthly_target), size=3, hjust = -0.2, vjust = 0.5, color = "red") +  # Annotate target value
+  labs(title = "Health Facility Survey Achievement by Month",
+       subtitle = "Plot of Completed interviews by Month",
+       caption = "Data source : Health Facility Survey, Kano") +
+    theme_manuscript() +
+  scale_x_discrete(labels = month.abb)   # Set labels for months on x-axis
+
+
+# Print the time series plot
+print(time_series_plot1)
+
+
+
+# Create a time series plot with lines, points, and labels-----
+time_series_plotMonth <- ggplot(summary_Month, aes(x = MonthNum, y = Total_Completed_in_Month, color = `MonthNum`, group = `MonthNum`, label = Total_Completed_in_Month)) +
+  geom_line() +
+  geom_point() +
+  geom_text(data = summary_Month , 
+            aes(label = paste(`MonthNum`, ": ", Total_Completed_in_Month)), 
+            size = 3, 
+            hjust = -0.2, 
+            vjust = 1.5) +  # Adjust the vjust parameter to increase spacing between labels
+  labs(title = "Completion Rates Over Time",
+       x = "Date",
+       y = "Total Completed",
+       color = "Interviewer") +
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legends
+
+# Print the time series plot
+print(time_series_plotMonth)
 
 df1$MonthNum <- gsub("/","" ,substr(df1$`Date`, 4, 5))
 
 startd <- df1 %>%
   group_by(`INTERVIEWER'S NAME`) %>%
-  #mutate(Start_Date = min(Date, na.rm = TRUE)) %>%
- # mutate(End_Date = max(Date, na.rm = TRUE)) %>%
+  mutate(Start_Date = min(Date, na.rm = TRUE)) %>%
+  mutate(End_Date = max(Date, na.rm = TRUE)) %>%
  # mutate(Days_worked = End_Date - Start_Date) %>%
   ungroup()
 View(startd)
@@ -793,13 +940,13 @@ View(table_result_day)
 
 
 
-summary_Date_RA$Date1 <- as.Date(summary_Date_RA$Date)
+summary_Date_RA$Date <- as.Date(summary_Date_RA$Date)
 
-# Create a line plot
-line_plot <- ggplot(summary_Date_RA, aes(x = Date1, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`)) +
+# Create a line plot-----
+line_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`)) +
   geom_line() +
   labs(title = "Completion Rates Over Time",
-       x = "Date1",
+       x = "Date",
        y = "Total Completed",
        color = "Date") +
   theme_minimal() + theme(axis.text.x = element_text(angle = 90))
@@ -819,18 +966,40 @@ bar_plot <- ggplot(summary_Date_RA, aes(x = `INTERVIEWER'S NAME` , y = Total_Com
 print(bar_plot)
 
 
+# Create a bar plot with labels----
+bar_plot <- ggplot(summary_Date_RA, aes(x = `INTERVIEWER'S NAME` , y = Total_Completed_by_DATE, fill = Date )) +
+  geom_bar(stat = "identity") +
+  labs(title = "Health Facility Survey Achievement by Date",
+    subtitle = "Plot of Completed interviews by day",
+    caption = "Data source : Health Facility Survey, Kano"
+  ) +
+  theme_manuscript() + theme(axis.text.x = element_text(angle = 90)) 
 
-time_series_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`, group = `INTERVIEWER'S NAME`)) +
+# Print the bar plot
+print(bar_plot)
+
+
+
+# Create a time series plot with lines, points, and labels-----
+time_series_plot <- ggplot(summary_Date_RA, aes(x = Date, y = Total_Completed_by_DATE, color = `INTERVIEWER'S NAME`, group = `INTERVIEWER'S NAME`, label = Total_Completed_by_DATE)) +
   geom_line() +
   geom_point() +
+  geom_text(data = summary_Date_RA %>% group_by(`INTERVIEWER'S NAME`) %>% slice(1), 
+            aes(label = paste(`INTERVIEWER'S NAME`, ": ", Total_Completed_by_DATE)), 
+            size = 3, 
+            hjust = -0.2, 
+            vjust = 1.5) +  # Adjust the vjust parameter to increase spacing between labels
   labs(title = "Completion Rates Over Time",
        x = "Date",
        y = "Total Completed",
        color = "Interviewer") +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = "none")  # Remove legends
 
 # Print the time series plot
 print(time_series_plot)
+
+
 
 
 
@@ -860,13 +1029,13 @@ phcplot1/phcplot
 
 summary_phc <-  df1  %>%
   mutate(Length_Address = length(`RESPONDENTS ADDRESS`)) %>%
-  filter ( Length_Address <20 ) %>%
+ # filter ( Length_Address <25 ) %>%
   group_by(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`,Length_Address) %>%
   summarise(
     Total_Completed_by_PHC = n(),
-    Add_Count = sum(nrow(`Length_Address` < 20))
+    Positive_Count = sum(nrow(`NAME OF HEALTH FACILITY`))
   ) |>
-select(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`, Total_Completed_by_PHC, Add_Count )
+select(`NAME OF HEALTH FACILITY`, `INTERVIEWER'S NAME`, Total_Completed_by_PHC, Length_Address )
 
 View(summary_phc)
 
@@ -1056,54 +1225,38 @@ plott
 
 plotdn + plothm + plott
 #Summary by AGE----
-
-# Corrected code to recode values for rows where State is "Kano"
-df1 <- df1 %>%
-  mutate(`q124b_new: How many pregnancies have you had` = ifelse(
-    State == "Kano",
-    recode(`q124b: How many pregnancies have you had`, 
-           "1" = "0", 
-           "2" = "1", 
-           "3" = "2", 
-           "4" = "3",
-           "5" = "4"),
-    `q124b: How many pregnancies have you had`
-  ))
-
-
-
-
 summary_Age <-  df1  %>%
   #filter ( `Complete_part1` =='Complete' ) %>%
-  group_by(`State`,`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`, `q124b: How many pregnancies have you had`) %>%
+  group_by(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`) %>%
   summarise(
     Total_Completed_by_AGE = n(),
     Positive_Count = sum(nrow(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`))
   ) |>
-  select(`State`,`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`, `q124b: How many pregnancies have you had`, Total_Completed_by_AGE )
+  select(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`,  Total_Completed_by_AGE )
 
 View(summary_Age)
 
+x <- c(summary_Age$`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`)
+y <- c(summary_Age$Total_Completed_by_AGE)
 
-ageplot <- ggplot(summary_Age,
-                  aes(x = `q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`)) +
-  geom_histogram(binwidth = 1, fill = "blue", color = "black", alpha = 0.7) +
- # geom_text(aes(label = signif(Total_Completed_by_AGE)), nudge_y = 0.5, vjust = -0.5, size = 3, color = "black") +
-  labs(
-    y = "Completed Interviews by Age",
-    x = "Age of Respondents",
-    title = "Health Facility Survey",
-    subtitle = "Plot of Respondents' Age Distribution",
-    caption = "Data source: Health Facility Survey, Kano"
-  ) +
-  theme_manuscript()
+
+ageplot<-ggplot(summary_Age,
+                 aes(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`,Total_Completed_by_AGE), size =4 , ) +
+  geom_bar(stat = "identity", fill="#223377")+
+  geom_text(aes(label = signif(Total_Completed_by_AGE)), nudge_y = 0, vjust = -0.5) +
+ # geom_text(aes(label =paste0(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`,"years :", signif(Total_Completed_by_AGE) )), nudge_y = 0, vjust = -0.5, ) +
+  labs(#title = "Health Facility Survey",
+       # subtitle = "Plot of Achievement by Month",
+        #caption = "Data source : Health Facility Survey, Kano"
+  )
+ageplot <- ageplot + theme_manuscript() +labs(y= "Completed Interviews by Age", x = "Plots by Age of Respondents") 
 ageplot
 
-df1$`q124b: How many pregnancies have you had` <- as.numeric(df1$`q124b: How many pregnancies have you had`)
 
-# Summary by Numbers of Prgnancies ----
+
+# Summary by AGE ----
 summary_Age <- df1 %>%
-  group_by( `State`,`q124b_new: How many pregnancies have you had` ) %>%
+  group_by(`q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`) %>%
   summarise(
     Total_Completed_by_AGE = n()
   ) 
@@ -1111,9 +1264,8 @@ summary_Age <- df1 %>%
 View(summary_Age)
 
 ageplot <- ggplot(summary_Age,
-                  aes(`q124b_new: How many pregnancies have you had`,Total_Completed_by_AGE)) +
+                  aes(x = `q101: How old were you on your last birthday? AGE AT LAST BIRTHDAY (IN YEARS)`, y = Total_Completed_by_AGE)) +
   geom_bar(stat = "identity", fill = "#223377") +
-  facet_wrap(State ~ .) +
   geom_text(aes(label = Total_Completed_by_AGE), vjust = -0.5, size = 3, hjust = 1) +
   labs(
     y = "Completed Interviews by Age",
@@ -1269,7 +1421,7 @@ barplot(y,names.arg=x, density=10, main="Total Positive by ages", xlab="AGEs", y
 #Summary by MARITAL_STATUS----
 
   summary_Marital_Status <-  df1  %>%
-#  filter ( `Complete_part1` =='Complete' ) %>%
+  filter ( `Complete_part1` =='Complete' ) %>%
   group_by(`q107: What is your current marital status?`) %>%
   summarise(
     Total_Completed_by_MARITAL_STATUS = n(),
@@ -2098,18 +2250,18 @@ p_net+p_nethang+p_netused_yesterday
 table(df1$Ward,df1$`q503: RESULT`)
 #Test Status by Health Facility  ----
 wardresult <- df1 %>%
- # filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
+  filter ( !(`Ward` == 'Zango'| `Ward` == 'Dorayi'| `Ward` == 'Tudun Wazurci'| `Ward` == 'Fagge D2'| `Ward` == 'Gobirawa') , (`Ward` %in% Allowedwards) ) %>%
   filter ( (`q503: RESULT` =='POSITIVE' |  `q503: RESULT` =='NEGATIVE' ))%>%
-  group_by(`NAME OF HEALTH FACILITY...6`, `q503: RESULT`) %>%
+  group_by(`NAME OF HEALTH FACILITY`, `q503: RESULT`) %>%
   summarize(Count = n()) %>%
   ungroup() %>%
-  group_by(`NAME OF HEALTH FACILITY...6`) %>%
+  group_by(`NAME OF HEALTH FACILITY`) %>%
   mutate(Total = sum(Count), Proportion = Count / Total * 100)
 
 colors <- c("NEGATIVE" = "green3", "POSITIVE" = "red3")
 
 # Create a basic bar plot with proportions and colored bars
-plot_wardresult <- ggplot(wardresult, aes(x = `NAME OF HEALTH FACILITY...6`, y = Proportion, fill = `q503: RESULT`)) +
+plot_wardresult <- ggplot(wardresult, aes(x = `NAME OF HEALTH FACILITY`, y = Proportion, fill = `q503: RESULT`)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = sprintf("%.1f%%", Proportion)),
             position = position_stack(vjust = 0.5),
@@ -2139,7 +2291,8 @@ colors <- c("NEGATIVE" = "green3", "POSITIVE" = "red3")
 plot_wardresult <- ggplot(wardresult, aes(x = `Ward`, y = Proportion, fill = `q503: RESULT`)) +
   geom_bar(stat = "identity") +
   geom_text(aes(label = sprintf("%.1f%%", Proportion)),
-            position = position_stack(vjust = 0.5)
+            position = position_stack(vjust = 0.5),
+            vjust = -0.5
   ) +
   #labs(title = "Test Results by  Mosquito net used yesterday", x = " Did you sleep inside a mosquito net last night? ", y = "Proportion of Result") +
   scale_fill_manual(values = colors) + theme_manuscript() + theme(axis.text.x = element_text(angle = 90)) # Apply the color scale
@@ -2442,7 +2595,7 @@ print(plot_wardresult)
   #Positive by Ward Selected KMC----
 
   testedbyWard_sel <- df1 %>%
-   # filter ( (`q503: RESULT` =='POSITIVE' |  `q503: RESULT` =='NEGATIVE'), (`Month_of_Completion` == 'Aug, 2023'|`Month_of_Completion` == 'Sep, 2023'), `LGA of Address`=='KMC' )%>%
+    filter ( (`q503: RESULT` =='POSITIVE' |  `q503: RESULT` =='NEGATIVE'), (`Month_of_Completion` == 'Aug, 2023'|`Month_of_Completion` == 'Sep, 2023'), `LGA of Address`=='KMC' )%>%
     group_by(`Ward`, `q503: RESULT`) %>%
     summarize(Count = n()) %>%
     ungroup() %>%
@@ -2735,1128 +2888,45 @@ print(plot_wardresult)
   p_testedbyWard_sel / p_testedbyWard_sel_count
 
 
-    #Loading the map-----
-  #View(mymap2)
-  
-  # breaks <- c(1, 10, 20, 30, 40)
-  #  colors <- c("yellow","orange","red","red3" , "red4")
-  #Plotting the map
-  mymapplot<- ggplot(data = shape) +
-    # geom_sf(data=gps_sf, aes( color=WardName), show.legend = FALSE) +
-    #geom_sf_text(data=mymap2,aes(label = WardName, geometry=geometry))+
-    geom_point(data=gps_sf, aes(x="HOUSEHOLD COORDINATE- Longitude", y="HOUSEHOLD COORDINATE- Latitude"))+
-    #scale_fill_manual(values = colors) +
-    #  geom_sf_text(data=mymap2,aes(label = Total_Count, geometry=geometry))+
-    theme_manuscript()
-  mymapplot
-  
-  
-  
-  #Plotting the map
-  ggplot() +
-    geom_sf(data=mymap2,mapping = aes(fill= cut(Total_Count, breaks = breaks) , geometry=geometry, colors="white"), show.legend = TRUE) +
-    # geom_sf_text(data=mymap2,aes(label = Total_Count, geometry=geometry)) +
-    geom_sf_text(data=mymap2,aes(label = NAME_1 , geometry=geometry) ) +
-    scale_fill_manual(values = colors)
-  #+geom_point(data = df1, aes(x="latitude", y="longitude"))
-  mymapplot
-  
-  p <-  mymapplot + geom_point(aes(df1$latitude, df1$longitude))
-  
-  ggplotly(p) 
-  
-  
-  library(haven)
-  library(tidyverse)
-  library(readxl)
-  library(dplyr)
-  library(ggplot2)
-  library(patchwork)
+    #Loading the map
+
   library(sf)
   library(ggplot2)
   library(ggmap)
   library(plotly)
+  shape <- read_sf(dsn = "/Users/user/Downloads/Kano_metro_ward_sixLGAs/", layer = "Kano_metro_ward_sixLGAs")
 
-    dframe<-read_csv('/Users/user/Downloads/UrbanMalariaHousehol_DATA_LABELS_2024-05-28_1844.csv')%>%
-    select(`Serial Number`, `INTERVIEWER'S NAME...15` , `Settlement Type` ,Ward,`HOUSEHOLD COORDINATE- Latitude`,`HOUSEHOLD COORDINATE- Longitude` )
-  View(dframe)
-  
-  
-  dframe1<-read_csv('/Users/user/Downloads/UrbanMalariaHousehol-DataUpdate2_DATA_LABELS_2024-01-14_1648_Wet_season.csv')%>%
-    select(`Serial Number`, `INTERVIEWER'S NAME` , `Settlement Type` ,Ward,`HOUSEHOLD COORDINATE- Latitude`,`HOUSEHOLD COORDINATE- Longitude` )
-  View(dframe1)
-  
-  
-  shape <- st_read(dsn = "/Users/user/Downloads/Kano_metro_ward_sixLGAs/", layer = "Kano_metro_ward_sixLGAs")
-  View(shape)
-  
-  
-  shapenigeria <- st_read(dsn = "/Users/user/Downloads/gadm36_NGA_shp/", layer = "gadm36_NGA_0")
-  View(shapenigeria)
-  
-  shapestates <- st_read(dsn = "/Users/user/Downloads/gadm36_NGA_shp/", layer = "gadm36_NGA_1")
-  View(shapestates)
-  
-  shapeslga <- st_read(dsn = "/Users/user/Downloads/gadm36_NGA_shp/", layer = "gadm36_NGA_2")
-  View(shapeslga)
-  
-  ggplot(shapeslga)+
-    geom_sf(aes(geometry=geometry))
-  
-  
-  shapeward <- st_read(dsn = "/Users/user/Downloads/ward shp files/nigeria_ward_boundaries/ng_wrds", layer = "ng_wrds")
-  ggplot(shapeward)+
-    geom_sf(aes(geometry=geometry))
-
-  
-  shapeward <- st_read(dsn = "/Users/user/Downloads/ward shp files/nigeria_ward_boundaries/ng_wrds", layer = "ng_wrds")
-  st_write(shapeward, 'Nigeria_Wards.shp')
-    
-  shape_Katsina <- shapeward %>%
-  filter(StateCode =="KT")
-  st_write(shape_Katsina, 'Katsina_Wards.shp')
-  
-  p<-ggplot(shape_Katsina)+
-    geom_sf(aes(geometry=geometry))
-  ggplotly(p)
-  
-  
-  
-  shape_Delta <- shapeward %>%
-    filter(StateCode =="DE")
-  st_write(shape_Delta, 'Delta_Wards.shp')
-  
-  
-  shape_Jigawa <- shapeward %>%
-    filter(StateCode =="JI")
-  st_write(shape_Jigawa, 'Jigawa_Wards.shp')
-  
-  shape_Yobe <- shapeward %>%
-    filter(StateCode =="YO")
-  st_write(shape_Yobe, 'Yobe_Wards.shp')
-  
-  
-  shape_Gombe <- shapeward %>%
-    filter(StateCode =="GO")
-  st_write(shape_Gombe, 'Gombe_Wards.shp')
-  
-  
-  shape_Taraba <- shapeward %>%
-    filter(StateCode =="TA")
-  st_write(shape_Taraba, 'Taraba_Wards.shp')
-  
-
-  shape_Adamawa <- shapeward %>%
-    filter(StateCode =="AD")
-  st_write(shape_Adamawa, 'Adamawa_Wards.shp')
-  
-  
-  
-  shape_Kano <- shapeward %>%
-    filter(StateCode =="KN")
-  st_write(shape_Kano, 'Kano_Wards.shp')
-  
-  
-  shape_Kaduna <- shapeward %>%
-    filter(StateCode =="KD")
-  st_write(shape_Kaduna, 'Kaduna_Wards.shp')
-  
-  
-  shape_Kwara <- shapeward %>%
-    filter(StateCode =="KW")
-  st_write(shape_Kwara, 'Kwara_Wards.shp')
-  
-  
-  shape_Niger <- shapeward %>%
-    filter(StateCode =="NI")
-  st_write(shape_Niger, 'Niger_Wards.shp')
-  
-  
-  
-  shape_Ogun <- shapeward %>%
-    filter(StateCode =="OG")
-  st_write(shape_Ogun, 'Ogun_Wards.shp')
-  
-  osogbowards <- c('Aagba',
-                   'Aare',
-                   'Ataoja A',
-                   'Ataoja B',
-                   'Ataoja C',
-                   'Ataoja D',
-                   'Ataoja E',
-                   'Baba Kekere',
-                   'Ekerin',
-                   'Eketa',
-                   'Jagun a',
-                   'Jagun B',
-                  'Otun Balogun a',
-                  'Otun Hagun B',
-                  'Otun Jagun a')
-  
-  osunwards <- c('Aagba',
-                 'Aare',
-                 'Abiri',
-                 'Abiri Ogudu',
-                 'Adeti',
-                 'Adio/Kuelu',
-                 'Afolu',
-                 'Agboora',
-                 'Agowande',
-                 'Ajaba',
-                 'Ajagba/Iwo-Oke',
-                 'Ajaota D',
-                 'Ajebandele',
-                 'Akarabata',
-                 'Akepe',
-                 'Akesin',
-                 'Akogun',
-                 'Alajue I',
-                 'Alajue Oja II',
-                 'Alapomu I',
-                 'Alapomu II',
-                 'Alekuwodo',
-                 'Aludundun',
-                 'Alusekere',
-                 'Amobi',
-                 'Anaye',
-                 'Anlugbua',
-                 'Anwo',
-                 'Apaso',
-                 'Apoti',
-                 'Ara I',
-                 'Ara II',
-                 'Aragan',
-                 'Araromi',
-                 'Araromi Owu',
-                 'Aromiwe',
-                 'Arowojobe',
-                 'Asa/Ajagunlase',
-                 'Asaaoni',
-                 'Ashi/Asaba',
-                 'Asipa/Akinlalu',
-                 'Asunmon',
-                 'Ataoja A',
-                 'Ataoja B',
-                 'Ataoja C',
-                 'Atelewo',
-                 'Atile',
-                 'Atoba',
-                 'Awala I',
-                 'Awala II',
-                 'Awo',
-                 'Aworo',
-                 'Ayee',
-                 'Ayegbogbo',
-                 'Ayegunle',
-                 'Ayepe',
-                 'Ayesan',
-                 'Ayetoro',
-                 'Baale',
-                 'Baba Kekere',
-                 'Babanla/Agante',
-                 'Babasanya',
-                 'Balogun',
-                 'Bara-Ejemu',
-                 'Bode-Osi',
-                 'Bolorunduro',
-                 'Buhari/Isibo',
-                 'Cooperative',
-                 'Dagbolu',
-                 'Edunabon I',
-                 'Edunabon II',
-                 'Egan Aaje',
-                 'Egbedi',
-                 'Eko Ajala/ Ende',
-                 'Ekosin/Iyeku',
-                 'Ekuro/Idoo',
-                 'Eleesi',
-                 'Ereja',
-                 'Erin-Ijesa',
-                 'Erin-Oke',
-                 'Erinmo',
-                 'Eripa',
-                 'Esa Odo',
-                 'Esa Oke',
-                 'Esa Otun',
-                 'Eti-Oni',
-                 'Eyindi',
-                 'Eyingbo',
-                 'Faaji/Opete',
-                 'Faforiji',
-                 'Famia',
-                 'Fiditi',
-                 'Gbogbo',
-                 'Gbongan Rural',
-                 'Gbonni',
-                 'Gidigbo I',
-                 'Gidigbo II',
-                 'Gidigbo III',
-                 'Iba I',
-                 'Iba II',
-                 'Ibala',
-                 'Ibodi',
-                 'Ibokun',
-                 'Ibokun Road',
-                 'Idi Ogun',
-                 'Idiape',
-                 'Ido Ijesa',
-                 'Ido-Osun',
-                 'Idooogun',
-                 'Ifelodun',
-                 'Ifeodan',
-                 'Ifewara I',
-                 'Ifewara II',
-                 'Igangan',
-                 'Igbajo I',
-                 'Igbajo II',
-                 'Igbajo III',
-                 'Igbaye',
-                 'Igbaye/Imuleke',
-                 'Igbogi',
-                 'Ijabe/Ilaodo',
-                 'Ijamo',
-                 'Ijebu-Ijesa',
-                 'Ijeda/Iloko',
-                 'Ijimoba',
-                 'Ijoka',
-                 'Ijugbe',
-                 'Ikeji Arakeji',
-                 'Ikeji Ile',
-                 'Ikeji-Ira',
-                 'Ikija I',
-                 'Ikija II',
-                 'Ikire-Ile/Iwara',
-                 'Ikonifin/Isero',
-                 'Ikotun',
-                 'Ilahun/Ikinyinwa',
-                 'Ilaje',
-                 'Ilaji',
-                 'Ilare',
-                 'Ilare I',
-                 'Ilare II',
-                 'Ilare III',
-                 'Ilare IV',
-                 'Ilase',
-                 'Ilawo',
-                 'Ile-Ogo/Obamoro',
-                 'Ilemo',
-                 'Ilemowu/Asamu',
-                 'Ilie',
-                 'Ilode I',
-                 'Ilode II',
-                 'Imesi Ile',
-                 'Imo',
-                 'Iperin',
-                 'Iperin Eyindi',
-                 'Iperindo',
-                 'Ipetu- Ile',
-                 'Ipetu-Ijesa',
-                 'Ipetumodu I',
-                 'Ipetumodu II',
-                 'Ipole',
-                 'Iragberi I',
-                 'Iragberi II',
-                 'Iremo I',
-                 'Iremo II',
-                 'Iremo III',
-                 'Iremo IV',
-                 'Iremo V',
-                 'Iresi I',
-                 'Iresi II',
-                 'Irojo',
-                 'Isale Asa',
-                 'Isale Ikirun',
-                 'Isale Oba',
-                 'Isale Oba I',
-                 'Isale Oba II',
-                 'Isale Oba III',
-                 'Isale Oba IV',
-                 'Isale Offa',
-                 'Isale osolo',
-                 'Isale Oyo',
-                 'Isaobi',
-                 'Isedo I',
-                 'Isedo II',
-                 'Isinmi',
-                 'Iso Ege',
-                 'Isokun',
-                 'Ita - Ofa',
-                 'Itagunmodi',
-                 'Itakogun',
-                 'Iwara',
-                 'Iwoye',
-                 'Jagun A',
-                 'Jagun B',
-                 'Jagun C',
-                 'Jagun-Jagun',
-                 'Jagun/Osi',
-                 'Jaleoyemi',
-                 'Kere',
-                 'Konda',
-                 'Kuye',
-                 'Lagere',
-                 'Logun',
-                 'Masifa',
-                 'Mefoworade',
-                 'Modakeke I',
-                 'Modakeke II',
-                 'Modakeke III',
-                 'Mogimogi',
-                 'Molarere',
-                 'Molete I',
-                 'Molete II',
-                 'Molete III',
-                 'Moore',
-                 'Moore/ Jaja',
-                 'Moringbere',
-                 'Moro',
-                 'Muroko',
-                 'Oba-Ile',
-                 'Oba-Oke',
-                 'Obaagun',
-                 'Obaale',
-                 'Obalende',
-                 'Obalufon',
-                 'Ode Omu Rural',
-                 'Odeyinka',
-                 'Odogbo',
-                 'Ogbaagbaa 1',
-                 'Ogbaagbaa 2',
-                 'Oja Osun',
-                 'Ojo/Aro',
-                 'Ojomun',
-                 'Oke - Iyin',
-                 'Oke Ada',
-                 'Oke Adan I',
-                 'Oke Adan II',
-                 'Oke Adan III',
-                 'Oke Afo',
-                 'Oke Amola',
-                 'Oke Aree',
-                 'Oke Bale',
-                 'Oke Balogun',
-                 'Oke Ede',
-                 'Oke Eran',
-                 'Oke Iba',
-                 'Oke Iro',
-                 'Oke Iroko',
-                 'Oke Oba I',
-                 'Oke Oba II',
-                 'Oke Ode',
-                 'Oke Ogi',
-                 'Oke Ola',
-                 'Oke Osun',
-                 'Oke Otan',
-                 'Oke Owena',
-                 'Oke Oye',
-                 'Oke-Ejigbo I',
-                 'Oke-Ejigbo II',
-                 'Oke-Ejigbo III',
-                 'Oke-Irun',
-                 'Oke-Omi',
-                 'Okebode',
-                 'Okerewe I',
-                 'Okerewe II',
-                 'Okerewe III',
-                 'Okesa',
-                 'Okini /Ofatedo/ Olorunsogo',
-                 'Okiti/ Monlufon',
-                 'Okua/Ekusa',
-                 'Olla',
-                 'Oloba/Atapara',
-                 'Olobu',
-                 'Olodan',
-                 'Olode',
-                 'Ologun/Agbakin',
-                 'Oloke',
-                 'Oloki/Akoda',
-                 'Olonde',
-                 'Oloti',
-                 'Oloya/Elemesho',
-                 'Olu-Ode',
-                 'Olufi',
-                 'Olufon',
-                 'Olugun',
-                 'Olukotun',
-                 'Olunisa',
-                 'Oluofinrin',
-                 'Olusokun',
-                 'Omisore',
-                 'Oosa',
-                 'Oosa Adifa',
-                 'Ooye',
-                 'Oranran',
-                 'Ore/Agbeye',
-                 'Orisunbare',
-                 'Orita-Sabo',
-                 'Orooruwo',
-                 'Osi',
-                 'Osolo/Oparin',
-                 'Osu I',
-                 'Osu II',
-                 'Osu III',
-                 'Osun Eesa',
-                 'Ota-Efun',
-                 'Otan-Ile',
-                 'Otun Balogun',
-                 'Otun Olufi',
-                 'Owoka',
-                 'Oyere I',
-                 'Oyere II',
-                 'Popo',
-                 'Sabo',
-                 'Sabo/Abogunde I',
-                 'Sabo/Abogunde II',
-                 'Sagba Abogunde',
-                 'Sakasaka',
-                 'Sango',
-                 'Sekona',
-                 'Seriki',
-                 'Sokoto',
-                 'Songbe',
-                 'Telemu',
-                 'Temidire',
-                 'Tokede',
-                 'Waasinmi',
-                 'Yakooyo',
-                 'Yekemi')
-  
-  
-  shape_Osun <- shapeward %>%
-    filter(WardName %in%  osunwards)
-  
-  shape_Osun_ <- shapeward %>%
-    filter(StateCode ==  "OS")
-  
-  
-  
-  ggplot(shape_Osun_)+
-    geom_sf(data=shape_Osun_,aes(geometry=geometry))
-    #geom_sf(data =shape_Osun,aes(fill =WardName))
-  
-  
-  st_write(shape_Osun, 'Osun_Wards.shp')
-  
-  
-    
-  #Dry season rename of Lat and Long
-  names(dframe)[names(dframe) == "HOUSEHOLD COORDINATE- Latitude"] <- "Latitude"
-  names(dframe)[names(dframe) == "HOUSEHOLD COORDINATE- Longitude"] <- "Longitude"
-  
-  
-  #Wet season rename of Lat and Long
-  names(dframe1)[names(dframe1) == "HOUSEHOLD COORDINATE- Latitude"] <- "Latitude"
-  names(dframe1)[names(dframe1) == "HOUSEHOLD COORDINATE- Longitude"] <- "Longitude"
-  
-  
-  dframe <- dframe%>% dplyr::filter((`Settlement Type`=="Formal" | `Settlement Type`=="Informal" | `Settlement Type`=="Slum"),(!is.na(Latitude) | !is.na(Longitude)))
-  dframe1<- na.omit(dframe[c("Longitude", "Latitude")])
-  
-  
   #Left joining the positive count with map polygon
-
- #shape=left_join(dframe,shape,by=c("Ward"="WardName"))
-
-#define the map theme function
-map_theme <- function(){
-  theme(axis.text.x = ggplot2::element_blank(),
-        axis.text.y = ggplot2::element_blank(),
-        axis.ticks = ggplot2::element_blank(),
-        rect = ggplot2::element_blank(),
-        plot.background = ggplot2::element_rect(fill = "white", colour = NA),
-        plot.title = element_text(hjust = 0.5),
-        legend.title.align=0.5,
-        legend.title=element_text(size=8, colour = 'black'),
-        legend.text =element_text(size = 8, colour = 'black'),
-        legend.key.height = unit(0.65, "cm"))
-}
-
-final_centroid_data<-read_csv('/Users/user/Downloads/kano_final_centroids_data.csv')
+  wardresult1 <- wardresult %>%
+    filter(`q503: RESULT` == "POSITIVE")
   
+  mymap2=left_join(shape,wardresult1,by=c("WardName"="Ward"))
+View(mymap2)
 
-dff <- final_centroid_data%>%
-  filter(!is.na(longitude) & !is.na(latitude))
-#remove other wards from the shape file
-shp <- shape
-#define the coordinates
-gps <- sf::st_as_sf(dff, coords=c("longitude", "latitude"), crs=4326)
-# Perform spatial intersection
-st_crs(gps) <- 4326
-st_crs(shp) <- 4326
-intersects_a1 <- st_intersection(gps, shp)
+  breaks <- c(0, 10, 20, 30, 40)
+  colors <- c("yellow","orange","red","red3" , "red4")
+  #Plotting the map
+   mymapplot<- ggplot(mymap2) +
+    geom_sf(data=mymap2, mapping = aes(fill=cut(Proportion, breaks = breaks), geometry=geometry, colors="white"), show.legend = TRUE) +
+    geom_sf_text(data=mymap2,aes(label = WardName, geometry=geometry))+
+     scale_fill_manual(values = colors) +
+   #  geom_sf_text(data=mymap2,aes(label = Total_Count, geometry=geometry))+
+     theme_manuscript()
 
+   mymapplot
 
 
 
-dff <- dframe%>%
-  filter(!is.na(Longitude) & !is.na(Latitude))
-#remove other wards from the shape file
-shp <- shape
-#define the coordinates
-gps <- sf::st_as_sf(dff, coords=c("Longitude", "Latitude"), crs=4326)
-# Perform spatial intersection
-st_crs(gps) <- 4326
-st_crs(shp) <- 4326
-intersects_a1 <- st_intersection(gps, shp)
+   #Plotting the map
+   ggplot() +
+     geom_sf(data=mymap2,mapping = aes(fill= cut(Total_Count, breaks = breaks) , geometry=geometry, colors="white"), show.legend = TRUE) +
+     # geom_sf_text(data=mymap2,aes(label = Total_Count, geometry=geometry)) +
+     geom_sf_text(data=mymap2,aes(label = NAME_1 , geometry=geometry) ) +
+     scale_fill_manual(values = colors)
+    #+geom_point(data = df1, aes(x="latitude", y="longitude"))
+mymapplot
 
 
-invalid_gps <- dframe %>%
-  filter(!`Serial Number` %in% intersects_a1$Serial.Number)
+p <-  mymapplot + geom_point(aes(df1$latitude, df1$longitude))
 
-write_csv(invalid_gps,"Invalid GPS Captured")
-
-
-
-invalid_gps__ <- intersects_a1 %>%
-  filter(!(WardName=="Giginyu" & WardName=="Dorayi" & WardName=="Fagge D2" & WardName=="Gobirawa" & WardName=="Zango"))
-
-
-
-
-invalid_gps_ <- invalid_gps %>%
-    group_by(Ward) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(Ward, total_issues )
-
-ggplot(invalid_gps_, aes(reorder(Ward,-total_issues), total_issues ), colour="brown", fill="khaki") +
-  geom_bar(stat = "identity", colour="brown", fill="tomato") +
-  geom_point(aes(size=total_issues), color="brown" , colour="khaki")+
-  scale_size_continuous(range = c(5, 10), guide = FALSE)  +
-  geom_text(size=3,color="white",aes(label = paste0(total_issues)))+
-  
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Quality Check Update",
-       subtitle = "GPS Position of households surveyed outside of Kano Metropolis",
-       caption = "Data source : Dry Season Cross Sectional Survey, Kano",
-  )
-
-
-serials_ <- invalid_gps %>%
-  group_by(Ward, `INTERVIEWER'S NAME...15`) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(Ward,`INTERVIEWER'S NAME...15`, total_issues )
-
-ggplot(serials_, aes(reorder(`INTERVIEWER'S NAME...15`,-total_issues), total_issues )) +
-  geom_bar(stat = "identity", colour="brown", fill="khaki") +
-  geom_point(aes(size=total_issues, color=Ward))+
-  scale_size_continuous(range = c(5, 13), guide = FALSE)  +
-  # geom_line(aes(colour = Ward, group = Ward))+
-  geom_text(size=2,colour="white",aes(label = paste0(total_issues)))+
-  #geom_text(label = Wrongwards$`INTERVIEWER.S.NAME`,size =3, nudge_y = 2, vjust = 0.4, angle = 30) +
-  #scale_fill_manual(values = rep("khaki", length(unique(Wrongwards$`INTERVIEWER.S.NAME`)))) +  # Set fill color to yellow
-  # theme_minimal()   # Use a minimal theme
-  # theme(legend.position = "none")  # Remove legend
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Cross Sectional Survey QA Update",
-       subtitle = "GPS Position of households surveyed outside of Kano Metropolis/Invalid GPS by RAs",
-       caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-
-
-
-
-all <- shp %>%
-  filter(WardName=="Zango"| WardName=="Dorayi" | WardName =="Giginyu" | WardName =="Fagge D2" | WardName =="Gobirawa"  )
-
-zangodf <- intersects_a1 %>%
-  filter(Ward=="Zango")
-
-zango <- all %>%
-  filter(WardName=="Zango")
-  
-  
-Giginyudf <- intersects_a1 %>%
-  filter(Ward=="Others")
-
-Giginyu <- all %>%
-  filter(WardName=="Giginyu")
-
-Faggedf <- intersects_a1 %>%
-  filter(Ward=="Fagge D2")
-
-Fagge <- all %>%
-  filter(WardName=="Fagge D2")
-
-Gobirawadf <- intersects_a1 %>%
-  filter(Ward=="Gobirawa")
-
-Gobirawa <- all %>%
-  filter(WardName=="Gobirawa")
-
-
-Dorayidf <- intersects_a1 %>%
-  filter(Ward=="Dorayi")
-
-Dorayi <- all %>%
-  filter(WardName=="Dorayi")
-
-
-#plot
-ggplot(all)+
-  geom_point(data = intersects_a1,  aes(geometry = geometry, colour=Settlement.Type), size=0.5, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf_text(data=all,aes(label = WardName , geometry=geometry) ) +
-  #geom_sf_text(data=intersects_a1, aes(label = ea_names , geometry=geometry),size=1 ) +
-  geom_sf(fill = NA) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey Geo-points of Households Surveyed",
-       subtitle = "GPS Position of HHs surveyed in Kano by Settlement type",
-       caption = "Data source : Wet Season Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-
-#plot
-ggplot(all)+
-  geom_point(data = intersects_a1,  aes(geometry = geometry, colour=settlement_type), size=0.5, stat= "sf_coordinates")+
-  #scale_color_manual(values = c(formal = "#00A08A", informal = "#F2A6A2" , slum = "#923159"))+
-  geom_sf_text(data=all,aes(label = WardName , geometry=geometry) ) +
-  geom_sf_text(data=intersects_a1, aes(label = ea_names , geometry=geometry),size=1 ) +
-  geom_sf(fill = NA) +
-  guides(size = FALSE)+
- map_theme()+
- theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey GeoPoints of EAs Centroid",
-       subtitle = "GPS Position of EA's surveyed in Kano by Settlement type",
-       caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-
-zango <- all %>%
-  filter(WardName=="Zango")
-
-zangodf <- intersects_a1 %>%
-  filter(Ward=="Zango")
-
-#plot
-ggplot(zango)+
-    geom_point(data = zangodf,  aes(geometry = geometry, colour = Settlement.Type), size=1.3, stat= "sf_coordinates")+
-    scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf_text(data=zango,aes(label = WardName , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-     subtitle = "GPS Position of households surveyed in Zango by Settlement type",
-     caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-coord_sf()
-
-
-#####Dorayi Plot
-
-#plot
-ggplot(Dorayi)+
-  geom_point(data = Dorayidf,  aes(geometry = geometry, colour = Settlement.Type), size=1, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf_text(data=Dorayi,aes(label = WardName , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-       subtitle = "GPS Position of households surveyed in Dorayi by Settlement type",
-       caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-#####Giginyu Plot
-
-ggplot(Giginyu)+
-  geom_point(data = Giginyudf,  aes(geometry = geometry, colour = Settlement.Type), size=1, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf_text(data=Giginyu,aes(label = WardName , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-       subtitle = "GPS Position of households surveyed in Giginyu by Settlement type",
-       caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-#####Fagge Plot
-
-ggplot(Fagge)+
-  geom_point(data = Faggedf,  aes(geometry = geometry, colour = Settlement.Type), size=1, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf_text(data=Fagge,aes(label = WardName , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-       subtitle = "GPS Position of households surveyed in Fagge D2 by Settlement type",
-       caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-#####Gobirawa Plot
-
-ggplot(Gobirawa)+
-  geom_point(data = Gobirawadf,  aes(geometry = geometry, colour = Settlement.Type), size=1, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf_text(data=Gobirawa,aes(label = WardName , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-       subtitle = "GPS Position of households surveyed in Gobirawa by Settlement type",
-       caption = "Data source : Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-#Nigeria Shape File
-shapengn <- read_sf(dsn = "/Users/user/Downloads/NGPR7ADT/shapefile/", layer = "gadm36_NGA_1")
-
-
-
-dff_ <- invalid_gps%>%
-  filter(!is.na(Longitude) & !is.na(Latitude))
-#remove other wards from the shape file
-#define the coordinates
-gps <- sf::st_as_sf(dff_, coords=c("Longitude", "Latitude"), crs=4326)
-# Perform spatial intersection
-st_crs(gps) <- 4326
-st_crs(shapengn) <- 4326
-intersects_ng <- st_intersection(gps, shapengn)
-
-nga <- shapengn %>%
-  filter(NAME_1=="Kano")
-
-#####NGN Plot
-
-ggplot(nga)+
-  geom_point(data = intersects_ng,  aes(geometry = geometry, colour = Settlement.Type), size=0.4, stat= "sf_coordinates")+
-  scale_color_manual(values = c(Formal = "#00A08A", Informal = "#F2A6A2" , Slum = "#923159"))+
-  geom_sf(fill = NA) +
-  geom_sf(data = all ,fill = NA) +
-  geom_sf_text(data=nga,aes(label = NAME_1 , geometry=geometry) ) +
-  guides(size = FALSE)+
-  map_theme()+
-  theme_manuscript()+
-  ylab("")+
-  xlab("")+
-  labs(title = "Cross Sectional Survey",
-       subtitle = "GPS Position of households surveyed falling outside of Kano Metropolis within and outside Kano state",
-       caption = "Data source : Dry Season Cross Sectional Survey, Kano"
-  )+
-  coord_sf()
-
-
-
-
-Wrongwards <- intersects_a1 %>%
-  filter(!(WardName=="Zango"| WardName=="Dorayi" | WardName =="Giginyu" | WardName =="Fagge D2" | WardName =="Gobirawa")) %>%
-  group_by(Ward) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(Ward, total_issues )
-
-ggplot(Wrongwards, aes(reorder(Ward,-total_issues), total_issues ), colour="brown", fill="khaki") +
-  geom_bar(stat = "identity", colour="brown", fill="tomato") +
-  geom_point(aes(size=total_issues), color="brown" , colour="khaki")+
-  scale_size_continuous(range = c(5, 10), guide = FALSE)  +
-  geom_text(size=3,color="white",aes(label = paste0(total_issues)))+
-
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Quality Check Update",
-       subtitle = "GPS Position of households surveyed outside of supposed wards",
-       caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-Serials <- intersects_a1 %>%
-  filter(!(WardName=="Zango"| WardName=="Dorayi" | WardName =="Giginyu" | WardName =="Fagge D2" | WardName =="Gobirawa")) %>%
-  group_by(`INTERVIEWER.S.NAME...15`,Ward) %>%
-  select(1,2,3,4,7,14)
-
-
-library(openxlsx)
-
-Serials <- do.call(cbind, Serials) 
-write.xlsx(Serials, "Cross_sectional_errors.xlsx") 
-
-
-write.csv(Serials, "Cross sectional households surveyed outside of supposed wards_1.csv", row.names = FALSE)
-
-Wrongwards <- intersects_a1 %>%
-  filter(!(WardName=="Zango"| WardName=="Dorayi" | WardName =="Giginyu" | WardName =="Fagge D2" | WardName =="Gobirawa")) %>%
-  group_by(Ward, `INTERVIEWER.S.NAME`) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(Ward,`INTERVIEWER.S.NAME`, total_issues )
-ggplot(Wrongwards, aes(reorder(`INTERVIEWER.S.NAME`,-total_issues), total_issues )) +
-  geom_bar(stat = "identity", colour="brown", fill="khaki") +
-  geom_point(aes(size=total_issues, color=Ward))+
-  scale_size_continuous(range = c(5, 13), guide = FALSE)  +
- # geom_line(aes(colour = Ward, group = Ward))+
-  geom_text(size=2,colour="white",aes(label = paste0(total_issues)))+
-  #geom_text(label = Wrongwards$`INTERVIEWER.S.NAME`,size =3, nudge_y = 2, vjust = 0.4, angle = 30) +
-  #scale_fill_manual(values = rep("khaki", length(unique(Wrongwards$`INTERVIEWER.S.NAME`)))) +  # Set fill color to yellow
- # theme_minimal()   # Use a minimal theme
- # theme(legend.position = "none")  # Remove legend
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Cross Sectional Survey QA Update",
-       subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-dframelong<-read_csv('/Users/user/Downloads/UrbanMalariaLongitud_DATA_LABELS_2024-05-14_1753.csv')
-
-dframelongib<-read_csv('/Users/user/Downloads/UrbanMalariaLongitud_DATA_LABELS_2024-05-14_1751.csv')
-
-
-
-dframelong <- dframelong %>%
-  group_by(`Serial Number`) %>%
-  fill(5:7)
-
-
-dframelong <- dframelong %>%
-  mutate(`INTERVIEWER'S NAME...15` = recode(`INTERVIEWER'S NAME...15`, "AISHa AHMAD" = "AISHA AHMAD", "LAWAN GAMBO" = "LAWAN GAMBO MUHAMMAD", "ABDUL" = "ABDUL", "KABIRU IDRIS" = "KABIRU IDRIS GARBA", "BULKISU"= "BILKISU", "MASHKUR AHAMAD" = "MASHKUR AHMAD", "AISHA ABDULLAHI"= "AISHA MUHAMMAD", "IDRIS" = "KABIRU IDRIS GARBA"))
-
-
-dframelong <- dframelong %>%
-  mutate(`INTERVIEWER'S NAME...31` = recode(`INTERVIEWER'S NAME...31`, "AISHa AHMAD" = "AISHA AHMAD", "LAWAN GAMBO" = "LAWAN GAMBO MUHAMMAD", "ABDUL" = "ABDUL", "KABIRU IDRIS" = "KABIRU IDRIS GARBA", "BULKISU"= "BILKISU", "MASHKUR AHAMAD" = "MASHKUR AHMAD", "AISHA ABDULLAHI"= "AISHA MUHAMMAD", "ASHA ABDULLAHI" = "AISHA MUHAMMAD","28-4-24"="AISHA AHMAD" ,"AISHA"="AISHA AHMAD", "IDRIS" = "KABIRU IDRIS GARBA"))
-
-
-Baseline <- dframelong %>%
-  filter(`Event Name` == "Baseline", `Complete?...25`=="Complete")%>%
-group_by(`Event Name`,`INTERVIEWER'S NAME...15`) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(`Event Name`,`INTERVIEWER'S NAME...15`, total_issues )
-
-ggplot(Baseline, aes(reorder(`INTERVIEWER'S NAME...15`,-total_issues), total_issues )) +
-  geom_bar(stat = "identity", colour="brown", fill="khaki") +
-  geom_point(aes(size=total_issues))+
-  scale_size_continuous(range = c(5, 13), guide = FALSE)  +
-  # geom_line(aes(colour = Ward, group = Ward))+
-  geom_text(size=4,colour="white",aes(label = paste0(total_issues)))+
-  #geom_text(label = Wrongwards$`INTERVIEWER.S.NAME`,size =3, nudge_y = 2, vjust = 0.4, angle = 30) +
-  #scale_fill_manual(values = rep("khaki", length(unique(Wrongwards$`INTERVIEWER.S.NAME`)))) +  # Set fill color to yellow
-  # theme_minimal()   # Use a minimal theme
-  # theme(legend.position = "none")  # Remove legend
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Longitudinal Baseline Update",
-       #subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       #caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-
-
-followup <- dframelong %>%
-  filter(`Complete?...39`=="Complete")%>%
-  group_by(`Event Name`, `INTERVIEWER'S NAME...31`) %>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(`Event Name`, `INTERVIEWER'S NAME...31`, total_issues )
-
-
-colnames(Baseline)[colnames(Baseline) == "INTERVIEWER'S NAME...15"] <- "INTERVIEWER'S NAME"
-colnames(followup)[colnames(followup) == "INTERVIEWER'S NAME...31"] <- "INTERVIEWER'S NAME"
-
-baseline_fol <- rbind(followup, Baseline)
-
-
-
-ggplot(followup, aes(reorder(`INTERVIEWER'S NAME...31`,-total_issues), total_issues )) +
-  geom_line(aes(colour=`Event Name`, group = `Event Name`),size =1) +
-  geom_point(aes(size=total_issues, color=`Event Name`))+
-  
-  scale_size_continuous(range = c(3, 10), guide = FALSE)  +
-  # geom_line(aes(colour = Ward, group = Ward))+
-  geom_text(size=4,colour="white",aes(label = paste0(total_issues)))+
-  #geom_text(label = Wrongwards$`INTERVIEWER.S.NAME`,size =3, nudge_y = 2, vjust = 0.4, angle = 30) +
-  #scale_fill_manual(values = rep("khaki", length(unique(Wrongwards$`INTERVIEWER.S.NAME`)))) +  # Set fill color to yellow
-  # theme_minimal()   # Use a minimal theme
-  # theme(legend.position = "none")  # Remove legend
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, size =10, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Longitudinal Baseline Update",
-       #subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       #caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-ggplot(baseline_fol, aes(reorder(`INTERVIEWER'S NAME`,-total_issues), total_issues )) +
-  geom_line(aes(colour=`Event Name`, group = `Event Name`),size =1) +
-  geom_point(aes(size=total_issues, color=`Event Name`))+
-  scale_size_continuous(range = c(1, 6), guide = FALSE)  +
-  # geom_line(aes(colour = Ward, group = Ward))+
-  geom_text(size=2,colour="white",aes(label = paste0(total_issues)))+
- # geom_text(size=4,colour="white",aes(label = paste0(total_issues.y)))+
-  #geom_text(label = Wrongwards$`INTERVIEWER.S.NAME`,size =3, nudge_y = 2, vjust = 0.4, angle = 30) +
-  #scale_fill_manual(values = rep("khaki", length(unique(Wrongwards$`INTERVIEWER.S.NAME`)))) +  # Set fill color to yellow
-  # theme_minimal()   # Use a minimal theme
-  # theme(legend.position = "none")  # Remove legend
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, size =10, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Longitudinal Baseline Update",
-       #subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       #caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-
-######
-
-Baselinew <- dframelong %>%
-  filter(`Event Name` == "Baseline", `Complete?...25`=="Complete")%>%
-  group_by(WARD, `Event Name`,`INTERVIEWER'S NAME...15`) %>%
-  fill(WARD)%>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(WARD, `Event Name`, total_issues )
-
-
-#Follow up script
-
-followupw <- dframelong %>%
-  filter(`Complete?...39`=="Complete")
-
-summary_bs_fl <- followupw %>%
-  group_by(WARD, `Event Name`,`INTERVIEWER'S NAME...31`) %>%
-  fill(WARD)%>%
-  summarise(
-    total_issues = n()
-  )%>%
-  select(WARD , `Event Name`, total_issues )
-
-
-colnames(Baselinew)[colnames(Baselinew) == "INTERVIEWER'S NAME...15"] <- "INTERVIEWER'S NAME"
-colnames(followupw)[colnames(followupw) == "INTERVIEWER'S NAME...31"] <- "INTERVIEWER'S NAME"
-
-baseline_folw <- rbind(summary_bs_fl, Baselinew)
-
-
-#####-----Total by Survey type by Ward 
-
-
-alldf <- dframelong %>%
-  filter(`Complete?...39`=="Complete" | `Complete?...25`=="Complete")%>%
-  mutate(`INTERVIEWER'S NAME...15` = ifelse(is.na(`INTERVIEWER'S NAME...15`), `INTERVIEWER'S NAME...31`, `INTERVIEWER'S NAME...15`))
-  
-
-alldf <- dframelongib %>%
-  filter(`Complete?...40`=="Complete" | `Complete?...25`=="Complete")%>%
-  mutate(`INTERVIEWER'S NAME...15` = ifelse(is.na(`INTERVIEWER'S NAME...15`), `INTERVIEWER'S NAME...31`, `INTERVIEWER'S NAME...15`))
-
-
-
-baseline_folw_sum <- alldf %>%
-    group_by(WARD ,`INTERVIEWER'S NAME...15`, `Event Name`)%>%
-    summarise(total_count = n())%>%
-      select(WARD ,`INTERVIEWER'S NAME...15`, `Event Name`, total_count)
-
-baseline_folw_sum <- baseline_folw_sum %>%
-  group_by(`INTERVIEWER'S NAME...15`) %>%
-  fill(WARD)
-
-
-
-
-t_sum <- baseline_folw_sum %>%
-  group_by(WARD, `Event Name`)%>%
-  summarise(total_count = sum(total_count))%>%
-  select(WARD , `Event Name`, total_count)
-  
-
-
-ggplot(t_sum, aes(reorder(WARD,-total_count), total_count )) +
-  geom_line(aes(colour=`Event Name`, group = `Event Name`),size =0.2) +
-  geom_point(aes(size=total_count, color=`Event Name`))+
-  scale_size_continuous(range = c(3, 10), guide = FALSE)  +
-  geom_text(size=2,colour="white",aes(label = paste0(total_count)))+
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, size =10, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Numbers of Issues")+
-  xlab("Interviewer Name")+
-  labs(title = "Longitudinal Baseline Update",
-       #subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       #caption = "Data source : Cross Sectional Survey, Kano",
-  )
-
-
-
-m_sum <-t_sum %>%
-  group_by(`Event Name`)%>%
-  summarise(total_count = sum(total_count))%>%
-  select(`Event Name`, total_count)
-
-
-
-ggplot(m_sum, aes(`Event Name`, total_count )) +
-  geom_line(aes(colour=`Event Name`),size =0.2) +
-  geom_point(aes(size=total_count, color=`Event Name`))+
-  scale_size_continuous(range = c(4, 12), guide = FALSE)  +
-  geom_text(size=3,colour="white",aes(label = paste0(total_count)))+
-  theme_manuscript()+
-  theme(axis.text.x = element_text(angle = 90, size =10, vjust = 0.5, hjust = 1)) +  # Rotate x-axis labels by 90 degrees
-  ylab("Total Counts")+
-  xlab("")+
-  labs(title = "Total longitudinal Baseline Update",
-       #subtitle = "GPS Position of households surveyed outside of supposed wards by RAs",
-       caption = "Data source : Longitudunal Survey, Kano",
-  ) + geom_hline(yintercept = 573, color = "red", size = 0.5) +
-  annotate("text", x = Inf, y = 573, label = "Target = 573",size=3, hjust = 1.1, vjust = -0.5, color = "blue")
-
-
-
+ggplotly(p)
