@@ -291,4 +291,8 @@ write_csv(sum_ward, "/Users/Mac/Downloads/Gift Wilfred Enang/Total households pe
 view(sum_ward)
 
 
+sum_dry <- dry %>%
+  group_by(Ward, Settlement.Type)%>%
+  filter(Ward != "")%>%
+  summarise(number_of_households = n())
 
